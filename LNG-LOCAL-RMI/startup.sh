@@ -1,0 +1,3 @@
+cd /home/LNG-LOCAL/LNG-LOCAL-RMI
+./StartLNGLOCALRMI &
+exit 0
