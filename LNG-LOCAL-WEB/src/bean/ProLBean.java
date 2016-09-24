@@ -70,35 +70,36 @@ public class ProLBean extends RmiBean
 		    	break;
 		    case 2://周报表
 		    	//判断当月1号是星期几，若是星期天，作为第一周第一天，否则归上星期
+		    	//判断当月1号是星期几，若是星期五，作为第一周第一天，否则归上星期
 		    	String pBTime = "";
 				String pETime = "";
 	    		switch(Integer.parseInt(CommUtil.getWeekDayString(Year + "-" + CommUtil.StrLeftFillZero(Month, 2) + "-01")))
 	    		{
-		    		case 0://星期天
+		    		case 5://星期天   星期五
 		    			pBTime = CommUtil.getDateAfter(Year + "-" + CommUtil.StrLeftFillZero(Month, 2) + "-01 00:00:00", (Integer.parseInt(Week)-1)*7);
 				    	pETime = CommUtil.getDateAfter(Year + "-" + CommUtil.StrLeftFillZero(Month, 2) + "-01 00:00:00", (Integer.parseInt(Week))*7-1);
 		    			break;
-		    		case 1://星期一
+		    		case 6://星期一  星期六
 		    			pBTime = CommUtil.getDateAfter(Year + "-" + CommUtil.StrLeftFillZero(Month, 2) + "-07 00:00:00", (Integer.parseInt(Week)-1)*7);
 				    	pETime = CommUtil.getDateAfter(Year + "-" + CommUtil.StrLeftFillZero(Month, 2) + "-07 00:00:00", (Integer.parseInt(Week))*7-1);
 		    			break;
-		    		case 2://星期二
+		    		case 0://星期二  星期日
 		    			pBTime = CommUtil.getDateAfter(Year + "-" + CommUtil.StrLeftFillZero(Month, 2) + "-06 00:00:00", (Integer.parseInt(Week)-1)*7);
 				    	pETime = CommUtil.getDateAfter(Year + "-" + CommUtil.StrLeftFillZero(Month, 2) + "-06 00:00:00", (Integer.parseInt(Week))*7-1);
 		    			break;
-		    		case 3://星期三
+		    		case 1://星期三  星期一
 		    			pBTime = CommUtil.getDateAfter(Year + "-" + CommUtil.StrLeftFillZero(Month, 2) + "-05 00:00:00", (Integer.parseInt(Week)-1)*7);
 				    	pETime = CommUtil.getDateAfter(Year + "-" + CommUtil.StrLeftFillZero(Month, 2) + "-05 00:00:00", (Integer.parseInt(Week))*7-1);
 		    			break;
-		    		case 4://星期四
+		    		case 2://星期四  星期二
 		    			pBTime = CommUtil.getDateAfter(Year + "-" + CommUtil.StrLeftFillZero(Month, 2) + "-04 00:00:00", (Integer.parseInt(Week)-1)*7);
 				    	pETime = CommUtil.getDateAfter(Year + "-" + CommUtil.StrLeftFillZero(Month, 2) + "-04 00:00:00", (Integer.parseInt(Week))*7-1);
 		    			break;
-		    		case 5://星期五
+		    		case 3://星期五  星期三
 		    			pBTime = CommUtil.getDateAfter(Year + "-" + CommUtil.StrLeftFillZero(Month, 2) + "-03 00:00:00", (Integer.parseInt(Week)-1)*7);
 				    	pETime = CommUtil.getDateAfter(Year + "-" + CommUtil.StrLeftFillZero(Month, 2) + "-03 00:00:00", (Integer.parseInt(Week))*7-1);
 		    			break;
-		    		case 6://星期六
+		    		case 4://星期六  星期四
 		    			pBTime = CommUtil.getDateAfter(Year + "-" + CommUtil.StrLeftFillZero(Month, 2) + "-02 00:00:00", (Integer.parseInt(Week)-1)*7);
 				    	pETime = CommUtil.getDateAfter(Year + "-" + CommUtil.StrLeftFillZero(Month, 2) + "-02 00:00:00", (Integer.parseInt(Week))*7-1);
 		    			break;
@@ -202,7 +203,7 @@ public class ProLBean extends RmiBean
 	   	response.sendRedirect(currStatus.getJsp());
 	}
 	
-	//月报表
+	//月报表导出
 	public void ExportToExcel(HttpServletRequest request, HttpServletResponse response, Rmi pRmi, boolean pFromZone)
 	{
 		try
@@ -734,7 +735,7 @@ public class ProLBean extends RmiBean
 		}
 	}
 	
-	//周报表
+	//周报表导出
 	public void ExportToExcel_W(HttpServletRequest request, HttpServletResponse response, Rmi pRmi, boolean pFromZone) 
 	{
 		try
@@ -763,35 +764,35 @@ public class ProLBean extends RmiBean
 			String pETime = "";
 			switch(Integer.parseInt(CommUtil.getWeekDayString(Year + "-" + CommUtil.StrLeftFillZero(Month, 2) + "-01")))
 			{
-	    		case 0://星期天
+	    		case 5://星期天   星期五
 	    			pBTime = CommUtil.getDateAfter(Year + "-" + CommUtil.StrLeftFillZero(Month, 2) + "-01 00:00:00", (Integer.parseInt(Week)-1)*7);
 			    	pETime = CommUtil.getDateAfter(Year + "-" + CommUtil.StrLeftFillZero(Month, 2) + "-01 00:00:00", (Integer.parseInt(Week))*7-1);
 	    			break;
-	    		case 1://星期一
+	    		case 6://星期一  星期六
 	    			pBTime = CommUtil.getDateAfter(Year + "-" + CommUtil.StrLeftFillZero(Month, 2) + "-07 00:00:00", (Integer.parseInt(Week)-1)*7);
 			    	pETime = CommUtil.getDateAfter(Year + "-" + CommUtil.StrLeftFillZero(Month, 2) + "-07 00:00:00", (Integer.parseInt(Week))*7-1);
 	    			break;
-	    		case 2://星期二
+	    		case 0://星期二  星期日
 	    			pBTime = CommUtil.getDateAfter(Year + "-" + CommUtil.StrLeftFillZero(Month, 2) + "-06 00:00:00", (Integer.parseInt(Week)-1)*7);
 			    	pETime = CommUtil.getDateAfter(Year + "-" + CommUtil.StrLeftFillZero(Month, 2) + "-06 00:00:00", (Integer.parseInt(Week))*7-1);
 	    			break;
-	    		case 3://星期三
+	    		case 1://星期三  星期一
 	    			pBTime = CommUtil.getDateAfter(Year + "-" + CommUtil.StrLeftFillZero(Month, 2) + "-05 00:00:00", (Integer.parseInt(Week)-1)*7);
 			    	pETime = CommUtil.getDateAfter(Year + "-" + CommUtil.StrLeftFillZero(Month, 2) + "-05 00:00:00", (Integer.parseInt(Week))*7-1);
 	    			break;
-	    		case 4://星期四
+	    		case 2://星期四  星期二
 	    			pBTime = CommUtil.getDateAfter(Year + "-" + CommUtil.StrLeftFillZero(Month, 2) + "-04 00:00:00", (Integer.parseInt(Week)-1)*7);
 			    	pETime = CommUtil.getDateAfter(Year + "-" + CommUtil.StrLeftFillZero(Month, 2) + "-04 00:00:00", (Integer.parseInt(Week))*7-1);
 	    			break;
-	    		case 5://星期五
+	    		case 3://星期五  星期三
 	    			pBTime = CommUtil.getDateAfter(Year + "-" + CommUtil.StrLeftFillZero(Month, 2) + "-03 00:00:00", (Integer.parseInt(Week)-1)*7);
 			    	pETime = CommUtil.getDateAfter(Year + "-" + CommUtil.StrLeftFillZero(Month, 2) + "-03 00:00:00", (Integer.parseInt(Week))*7-1);
 	    			break;
-	    		case 6://星期六
+	    		case 4://星期六  星期四
 	    			pBTime = CommUtil.getDateAfter(Year + "-" + CommUtil.StrLeftFillZero(Month, 2) + "-02 00:00:00", (Integer.parseInt(Week)-1)*7);
 			    	pETime = CommUtil.getDateAfter(Year + "-" + CommUtil.StrLeftFillZero(Month, 2) + "-02 00:00:00", (Integer.parseInt(Week))*7-1);
 	    			break;
-			}
+    		}
 			
 			//判断pBTime是否在本月内
 			if(Integer.parseInt(pBTime.substring(5,7)) == Integer.parseInt(Month))
@@ -1619,7 +1620,7 @@ public class ProLBean extends RmiBean
 		}
 	}
 	
-	//日报表
+	//日报表导出
 	public void ExportToExcel_D(HttpServletRequest request, HttpServletResponse response, Rmi pRmi, boolean pFromZone) 
 	{
 		try

@@ -1,6 +1,7 @@
 package servlet;
 
 import java.io.IOException;
+
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.servlet.ServletConfig;
@@ -8,6 +9,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import rmi.*;
 import util.*;
 import bean.*;
@@ -398,10 +400,8 @@ public class MainServlet extends HttpServlet
         	new ProRBean().ExecCmd(request, response, m_Rmi, false);
         else if (strUrl.equalsIgnoreCase("Pro_R_Export.do"))	                 //实时库存-导出
         	new ProRBean().ExportToExcel(request, response, m_Rmi, false);
-        else if (strUrl.equalsIgnoreCase("Pro_R_Date.do"))	                     //实时库存-添加查询
+        else if (strUrl.equalsIgnoreCase("Pro_R_Date.do"))	                     //实时库存添加查询
         	new ProRBean().ExDate(request, response, m_Rmi, false);
-        
-        
         else if (strUrl.equalsIgnoreCase("Pro_I.do"))	                         //卸车记录
         	new ProIBean().ExecCmd(request, response, m_Rmi, false);
         else if (strUrl.equalsIgnoreCase("Pro_I_Export.do"))	                 //卸车记录-导出
@@ -421,9 +421,7 @@ public class MainServlet extends HttpServlet
         else if (strUrl.equalsIgnoreCase("Pro_O_Date.do"))	                     //加注记录-日报查询
         	new DateBaoBean().WxhDate(request, response, m_Rmi, false);
         else if (strUrl.equalsIgnoreCase("Pro_O_Del.do"))	                     //加注记录删除
-        	new ProOBean().doDel(request, response, m_Rmi, false);
-        
-        
+        	new ProOBean().doDel(request, response, m_Rmi, false); 
         else if (strUrl.equalsIgnoreCase("Pro_Id_Car.do"))	                     //加注记录-车辆信息查询
         	new CcmInfoBean().IdCar(request, response, m_Rmi, false);
         else if (strUrl.equalsIgnoreCase("Pro_L.do"))	                         //场站报表
@@ -450,10 +448,6 @@ public class MainServlet extends HttpServlet
         	new ProLCrpBean().ExportToExcel_W(request, response, m_Rmi, false);
         else if (strUrl.equalsIgnoreCase("Pro_L_Crp_D_Export.do"))	             //公司报表-日报表
         	new ProLCrpBean().ExportToExcel_D(request, response, m_Rmi, false);
-        
-        
-        
-        
         else if (strUrl.equalsIgnoreCase("Pro_Crp_G.do"))	             	     //公司报表-图表分析
         	new ProLCrpBean().Pro_Crp_G(request, response, m_Rmi, false);
         else if (strUrl.equalsIgnoreCase("Pro_L_Crm.do"))	                     //客户销售量确认
@@ -488,6 +482,7 @@ public class MainServlet extends HttpServlet
         	new ProOBean().DZBExcel(request, response, m_Rmi, false);              
         else if (strUrl.equalsIgnoreCase("Pro_L_D_Add.do"))	                     //场站报表日报表其他信息添加
         	new DateBaoBean().ExecCmd(request, response, m_Rmi, false);
+        
         /**************************************user-sat***************************************************/
         else if (strUrl.equalsIgnoreCase("Sat_Check.do"))	                     //安全检查
         	new SatCheckBean().ExecCmd(request, response, m_Rmi, false);
@@ -535,7 +530,7 @@ public class MainServlet extends HttpServlet
         	new SatTrainLBean().ExportToExcel(request, response, m_Rmi, false);
         else if (strUrl.equalsIgnoreCase("Sat_Drill.do"))	                     //应急演练
         	new SatDrillBean().ExecCmd(request, response, m_Rmi, false);
-        else if (strUrl.equalsIgnoreCase("Sat_To_Drill.do"))	                 //应急演练连接
+        else if (strUrl.equalsIgnoreCase("Sat_To_Drill.do"))	                     //应急演练连接
         	new SatDrillBean().ToCmd(request, response, m_Rmi, false);
         else if (strUrl.equalsIgnoreCase("Sat_Drill_Export.do"))	             //应急演练-导出
         	new SatDrillBean().ExportToExcel(request, response, m_Rmi, false);
@@ -559,8 +554,8 @@ public class MainServlet extends HttpServlet
         /**************************************user-lab***************************************************/
         else if (strUrl.equalsIgnoreCase("Lab_Store.do"))	                     //库存台账
         	new LabStoreBean().ExecCmd(request, response, m_Rmi, false);
-        else if (strUrl.equalsIgnoreCase("Lab_Store_File.do"))	                 //库存台账批量导入
-        	new LabStoreBean().DaoLabFile(request, response, m_Rmi, false, Config);
+//        else if (strUrl.equalsIgnoreCase("Lab_Store_File.do"))	                 //库存台账批量导入
+//        	new LabStoreBean().DaoLabFile(request, response, m_Rmi, false, Config);
         else if (strUrl.equalsIgnoreCase("Lab_Store_Export.do"))	             //库存台账-导出
         	new LabStoreBean().ExportToExcel(request, response, m_Rmi, false);
         else if (strUrl.equalsIgnoreCase("Lab_Store_Scrape.do"))	             //库存台账-报废
@@ -569,19 +564,19 @@ public class MainServlet extends HttpServlet
         	new LabStoreIBean().ExecCmd(request, response, m_Rmi, false);
         else if (strUrl.equalsIgnoreCase("Lab_Store_I_Export.do"))	             //申购记录-导出
         	new LabStoreIBean().ExportToExcel(request, response, m_Rmi, false);
-        else if (strUrl.equalsIgnoreCase("Lab_Store_IN_File.do"))	             //库存台账批量导入
-        	new LabStoreIBean().DaoLabIFile(request, response, m_Rmi, false, Config);
+//        else if (strUrl.equalsIgnoreCase("Lab_Store_IN_File.do"))	             //库存台账批量导入
+//        	new LabStoreIBean().DaoLabIFile(request, response, m_Rmi, false, Config);
         else if (strUrl.equalsIgnoreCase("Lab_Store_IN_Export.do"))	             //入库记录-导出
         	new LabStoreIBean().IN_ExportToExcel(request, response, m_Rmi, false);
         else if (strUrl.equalsIgnoreCase("Lab_Store_O.do"))	                     //出入记录
         	new LabStoreOBean().ExecCmd(request, response, m_Rmi, false);
-        else if (strUrl.equalsIgnoreCase("Lab_Store_O_File.do"))	             //库存台账批量导入
-        	new LabStoreOBean().DaoLabOFile(request, response, m_Rmi, false, Config);
+//        else if (strUrl.equalsIgnoreCase("Lab_Store_O_File.do"))	             //库存台账批量导入
+//        	new LabStoreOBean().DaoLabOFile(request, response, m_Rmi, false, Config);
         else if (strUrl.equalsIgnoreCase("Lab_Store_O_Export.do"))	             //出入记录-导出
         	new LabStoreOBean().ExportToExcel(request, response, m_Rmi, false);
         else if (strUrl.equalsIgnoreCase("Lab_Store_O_Status.do"))	             //出入记录-审核
         	new LabStoreOBean().doStatus(request, response, m_Rmi, false);        
-        else if (strUrl.equalsIgnoreCase("Lab_Store_P.do"))	                     //劳保盘点
+        else if (strUrl.equalsIgnoreCase("Lab_Store_P.do"))	             //劳保盘点
         	new LabStorePBean().ExecCmd(request, response, m_Rmi, false);
         else if (strUrl.equalsIgnoreCase("Lab_Store_P_File.do"))	             //盘点导入
         	new LabStorePBean().DaoLabPFile(request, response, m_Rmi, false, Config);
@@ -605,10 +600,12 @@ public class MainServlet extends HttpServlet
         /**************************************user-spa***************************************************/
         else if (strUrl.equalsIgnoreCase("Spa_Store.do"))	                     //库存台账
         	new SpaStoreBean().ExecCmd(request, response, m_Rmi, false);
-        else if (strUrl.equalsIgnoreCase("Spa_Store_File.do"))	                 //库存台账导入
-        	new SpaStoreBean().DaoSpaFile(request, response, m_Rmi, false, Config);
+//        else if (strUrl.equalsIgnoreCase("Spa_Store_File.do"))	                 //库存台账导入
+//        	new SpaStoreBean().DaoSpaFile(request, response, m_Rmi, false, Config);
         else if (strUrl.equalsIgnoreCase("Spa_Store_Export.do"))	             //库存台账-导出       	
-        	new SpaStoreBean().ExportToExcel(request, response, m_Rmi, false);     
+        	new SpaStoreBean().ExportToExcel(request, response, m_Rmi, false);  
+        else if (strUrl.equalsIgnoreCase("Spa_Store_Scrape.do"))	             //库存台账-报废
+        	new SpaStoreBean().doScrape(request, response, m_Rmi, false);
         else if (strUrl.equalsIgnoreCase("Spa_Station.do"))	                     //库存台账-站点        	
         	new SpaStationBean().ExecCmd(request, response, m_Rmi, false);
         else if (strUrl.equalsIgnoreCase("Spa_Store_I.do"))	                     //申购记录
@@ -617,15 +614,15 @@ public class MainServlet extends HttpServlet
         	new SpaStoreIBean().ExportToExcel(request, response, m_Rmi, false);
         else if (strUrl.equalsIgnoreCase("Spa_Store_IN_Export.do"))	             //入库记录-导出
         	new SpaStoreIBean().IN_ExportToExcel(request, response, m_Rmi, false);
-        else if (strUrl.equalsIgnoreCase("Spa_Store_IN_File.do"))	             //入库记录-导入
-        	new SpaStoreIBean().DaoSpaINFile(request, response, m_Rmi, false, Config);
-        else if (strUrl.equalsIgnoreCase("Spa_Store_O.do"))	                     //出入记录
+//        else if (strUrl.equalsIgnoreCase("Spa_Store_IN_File.do"))	             //入库记录-导入
+//        	new SpaStoreIBean().DaoSpaINFile(request, response, m_Rmi, false, Config);
+        else if (strUrl.equalsIgnoreCase("Spa_Store_O.do"))	                     //出库记录
         	new SpaStoreOBean().ExecCmd(request, response, m_Rmi, false);
-        else if (strUrl.equalsIgnoreCase("Spa_Store_O_File.do"))	             //出入记录批量导入
-        	new SpaStoreOBean().DaoSpaOFile(request, response, m_Rmi, false, Config);
-        else if (strUrl.equalsIgnoreCase("Spa_Store_O_Export.do"))	             //出入记录-导出
+//        else if (strUrl.equalsIgnoreCase("Spa_Store_O_File.do"))	             //出库记录批量导入
+//        	new SpaStoreOBean().DaoSpaOFile(request, response, m_Rmi, false, Config);
+        else if (strUrl.equalsIgnoreCase("Spa_Store_O_Export.do"))	             //出库记录-导出
         	new SpaStoreOBean().ExportToExcel(request, response, m_Rmi, false);
-        else if (strUrl.equalsIgnoreCase("Spa_Store_O_Status.do"))	             //出入记录-审核
+        else if (strUrl.equalsIgnoreCase("Spa_Store_O_Status.do"))	             //出库记录-审核
         	new SpaStoreOBean().doStatus(request, response, m_Rmi, false);
         else if (strUrl.equalsIgnoreCase("Spa_Store_L.do"))	                     //统计报表
         	new SpaStoreLBean().ExecCmd(request, response, m_Rmi, false);

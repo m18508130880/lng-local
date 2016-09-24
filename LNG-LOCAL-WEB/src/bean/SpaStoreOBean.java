@@ -1,9 +1,7 @@
 package bean;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintWriter;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -11,15 +9,9 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
-
-import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import com.jspsmart.upload.SmartUpload;
-
-import jxl.Sheet;
 import jxl.Workbook;
 import jxl.format.Alignment;
 import jxl.format.Border;
@@ -46,7 +38,7 @@ public class SpaStoreOBean extends RmiBean
 	{
 		super.className = "SpaStoreOBean";
 	}
-	 
+	
 	public void ExecCmd(HttpServletRequest request, HttpServletResponse response, Rmi pRmi, boolean pFromZone) throws ServletException, IOException
 	{
 		getHtmlData(request);
@@ -66,13 +58,13 @@ public class SpaStoreOBean extends RmiBean
 		{
 			Func_Sub_Id = "";
 		}
-				
-		Func_Type_Id = currStatus.getFunc_Type_Id();
-		if(null == Func_Type_Id || Func_Type_Id.equals("888"))
-		{
-			Func_Type_Id = "";
-		}
 		
+		//状态
+		Func_Sel_Id = currStatus.getFunc_Sel_Id()+"";
+		if(Func_Sel_Id.equals("9"))
+		{
+			Func_Sel_Id = "";
+		}
 		
 		msgBean = pRmi.RmiExec(currStatus.getCmd(), this, currStatus.getCurrPage());
 		switch(currStatus.getCmd())
@@ -86,14 +78,12 @@ public class SpaStoreOBean extends RmiBean
 		    	currStatus.setTotalRecord(msgBean.getCount());
 		    	currStatus.setJsp("Spa_Store_O.jsp?Sid=" + Sid);
 		    	
-		    	msgBean = pRmi.RmiExec(1, this, 0);
-		    	request.getSession().setAttribute("Spa_Store_Cpm_" + Sid, (Object)msgBean.getMsg());
-		    	
-		    	msgBean = pRmi.RmiExec(2, this, 0);
-		    	request.getSession().setAttribute("Spa_Store_Type_" + Sid, (Object)msgBean.getMsg());
-		    	
-		    	msgBean = pRmi.RmiExec(3, this, 0);
-		    	request.getSession().setAttribute("Spa_Store_Mode_" + Sid, (Object)msgBean.getMsg());
+		    	//库存台账
+		    	SpaStoreBean Store = new SpaStoreBean();
+		    	Store.setFunc_Corp_Id("");
+		    	Store.setFunc_Sub_Id("");
+		    	msgBean = pRmi.RmiExec(0, Store, 0);
+				request.getSession().setAttribute("Spa_Store_" + Sid, (Object)msgBean.getMsg());
 		    	break;
 		}
 		
@@ -239,10 +229,11 @@ public class SpaStoreOBean extends RmiBean
 				while(iterator.hasNext())
 				{
 					i++;
-					//SpaStoreOBean Bean = (SpaStoreOBean)iterator.next();
-
-					//String D_Spa_Mode      = Bean.getSpa_Mode();
-					/**String D_Model         = Bean.getModel();
+					SpaStoreOBean Bean = (SpaStoreOBean)iterator.next();
+					String D_Spa_Type_Name = Bean.getSpa_Type_Name();
+					String D_Spa_Mode      = Bean.getSpa_Mode();
+					String D_Model         = Bean.getModel();
+					String D_Spa_O_Time    = Bean.getSpa_O_Time();
 					String D_Spa_Mode_Name = "/";
 					if(null != D_Model && D_Model.length() > 0)
 					{
@@ -250,18 +241,36 @@ public class SpaStoreOBean extends RmiBean
 						if(List.length >= Integer.parseInt(D_Spa_Mode))
 							D_Spa_Mode_Name = List[Integer.parseInt(D_Spa_Mode)-1];
 					}
-					**/
 					
+					String D_Spa_O_Stat_Name = Bean.getSpa_O_Stat_Name();
+					String D_Spa_O_BCnt      = Bean.getSpa_O_BCnt();
+					String D_Spa_O_MCnt      = Bean.getSpa_O_MCnt();
+					String D_Spa_O_ACnt      = Bean.getSpa_O_ACnt();
+					String D_Spa_O_Man       = Bean.getSpa_O_Man();
+					String D_Spa_O_Memo      = Bean.getSpa_O_Memo();
 					
+					String D_Operator_Name = Bean.getOperator_Name();
+					String D_Status_OP_Name= Bean.getStatus_OP_Name();
+					String D_Status_Memo   = Bean.getStatus_Memo();
+					if(null == D_Status_OP_Name){D_Status_OP_Name = "";}
+					if(null == D_Status_Memo){D_Status_Memo = "";}
 					
-					//String str_Status = "";
-					
+					String str_Status = "";
+					switch(Integer.parseInt(Bean.getStatus()))
+					{
+						case 1:
+							str_Status = "有效";
+							break;
+						case 2:
+							str_Status = "无效";
+							break;
+					}
 					
 					sheet.setRowView(i, 400);
 					sheet.setColumnView(i, 20);
 					label = new Label(0,i,(i-1)+"", wff3);
 		            sheet.addCell(label);
-		           /** label = new Label(1,i,D_Spa_Type_Name, wff3);
+		            label = new Label(1,i,D_Spa_Type_Name, wff3);
 		            sheet.addCell(label);
 		            label = new Label(2,i,D_Spa_Mode_Name, wff3);
 		            sheet.addCell(label);
@@ -285,7 +294,7 @@ public class SpaStoreOBean extends RmiBean
 		            sheet.addCell(label);
 		            label = new Label(12,i,D_Status_OP_Name, wff3);
 		            sheet.addCell(label);
-		            label = new Label(13,i,D_Status_Memo, wff3);**/
+		            label = new Label(13,i,D_Status_Memo, wff3);
 		            sheet.addCell(label);
 				}
 				
@@ -324,99 +333,6 @@ public class SpaStoreOBean extends RmiBean
 		request.getSession().setAttribute("CurrStatus_" + Sid, currStatus);
 		outprint.write(Resp);
 	}
-	//出库批量导入
-	public void DaoSpaOFile(HttpServletRequest request, HttpServletResponse response, Rmi pRmi, boolean pFromZone, ServletConfig pConfig) 
-	{
-		try
-		{	
-			SmartUpload mySmartUpload = new SmartUpload();
-			mySmartUpload.initialize(pConfig, request, response);
-			mySmartUpload.setAllowedFilesList("xls,xlsx,XLS,XLSX,");
-			mySmartUpload.upload();
-			
-			Sid = mySmartUpload.getRequest().getParameter("Sid");
-			currStatus = (CurrStatus)request.getSession().getAttribute("CurrStatus_" + Sid);						
-			System.out.println("Sid"+Sid+"[]"+"currStatus"+currStatus);
-			if(mySmartUpload.getFiles().getCount() > 0 && mySmartUpload.getFiles().getFile(0).getFilePathName().trim().length() > 0)
-			{
-				if(mySmartUpload.getFiles().getFile(0).getSize()/1024 <= 3072)//最大3M
-				{		
-					String FileSaveRoute = "/www/LNG-LOCAL/LNG-LOCAL-WEB/files/upfiles/";										
-					//上传现有文档			
-					com.jspsmart.upload.File myFile = mySmartUpload.getFiles().getFile(0);		
-					String File_Name = new SimpleDateFormat("yyyyMMdd").format(new Date()) + CommUtil.Randon()+ "." + myFile.getFileExt();			
-					myFile.saveAs(FileSaveRoute + File_Name);						
-					//录入数据库
-					InputStream is = new FileInputStream(FileSaveRoute + File_Name);
-					Workbook rwb = Workbook.getWorkbook(is);					
-					Sheet rs = rwb.getSheet(0);					
-				    int rsRows = rs.getRows();		
-				    int succCnt = 0;	
-				    for(int i=3; i<rsRows; i++)
-				    {
-				    	if(null==rs.getCell(1, i).getContents().trim()||"".equals(rs.getCell(1, i).getContents().trim()))
-				    	{
-				    
-				    		break;//当excel文档第一行为空时，退出循环
-				    		}
-				    	Spa_Type    = rs.getCell(1, i).getContents().trim();	//备件名称				    	
-				    	Spa_Mode    = rs.getCell(2, i).getContents().trim();	//规格型号	 
-				    	Unit        = rs.getCell(3, i).getContents().trim();
-				    	if(null==rs.getCell(4, i).getContents().trim()||"".equals(rs.getCell(4, i).getContents().trim()))
-				    	{Spa_Num = "0";}else{Spa_Num     = rs.getCell(4, i).getContents().trim();}				    	
-				    	Spa_Price   = rs.getCell(5, i).getContents().trim();
-				    	Spa_Amt     = rs.getCell(6, i).getContents().trim();	
-				    	CTime       = rs.getCell(7, i).getContents().trim();
-				    	Cpm_Id      = rs.getCell(8, i).getContents().trim();
-				    	if(null==rs.getCell(9, i).getContents().trim()||"".equals(rs.getCell(9, i).getContents().trim()))
-				    	{Spa_O_Oper = "无";}else{Spa_O_Oper  = rs.getCell(9, i).getContents().trim();}
-				    	if(null==rs.getCell(10, i).getContents().trim()||"".equals(rs.getCell(10, i).getContents().trim()))
-				    	{Operator = "无";}else{Operator    = rs.getCell(10, i).getContents().trim();}
-				    	if(null==rs.getCell(11, i).getContents().trim()||"".equals(rs.getCell(11, i).getContents().trim()))
-				    	{Spa_Memo = "无备注";}else{Spa_Memo    = rs.getCell(11, i).getContents().trim();}					    	
-				    	msgBean = pRmi.RmiExec(10, this, 0);
-				    	if(msgBean.getStatus() == MsgBean.STA_SUCCESS)
-						{
-				    		succCnt ++;
-						}
-				    }	
-				    currStatus.setResult("成功导入[" + String.valueOf(succCnt) + "/" + String.valueOf(rsRows-3) + "]个");
-				}
-				else
-				{
-					currStatus.setResult("文档上传失败！文档过大，必须小于3M!");
-				}				
-			}
-			
-			Func_Corp_Id = currStatus.getFunc_Corp_Id();
-			if(null == Func_Corp_Id || Func_Corp_Id.equals("9999"))
-			{
-				Func_Corp_Id = "";
-			}			
-			
-			Func_Type_Id = currStatus.getFunc_Type_Id();
-			if(null == Func_Type_Id || Func_Type_Id.equals("888"))
-			{
-				Func_Type_Id = "";
-			}
-			
-			msgBean = pRmi.RmiExec(0, this, 0);			
-			request.getSession().setAttribute("Spa_Store_O_" + Sid, ((Object)msgBean.getMsg()));
-	    	currStatus.setTotalRecord(msgBean.getCount());
-	    	currStatus.setJsp("Spa_Store_O.jsp?Sid=" + Sid);					
-			request.getSession().setAttribute("CurrStatus_" + Sid, currStatus);
-		   	response.sendRedirect(currStatus.getJsp());
-		}
-		catch(Exception exp)
-		{
-			exp.printStackTrace();
-		}
-	
-	}
-	
-	
-	
-	
 	
 	public String getSql(int pCmd)
 	{
@@ -424,55 +340,24 @@ public class SpaStoreOBean extends RmiBean
 		switch (pCmd)
 		{
 			case 0://查询
-				Sql = "select t.sn,t.spa_type,spa_mode,t.unit,t.spa_num,t.spa_price,t.spa_amt,t.ctime,t.spa_memo,t.cpm_id, t.spa_o_oper, t.operator " +
-			  	  	  " from spa_store_o t " +
-			  	  	  " where t.cpm_id like '"+ Cpm_Id +"%' " +
-			  	  	  " and t.spa_type like '"+ Func_Corp_Id +"%' " +
-			  	  	  " and t.spa_mode like '"+ Func_Type_Id +"%'" +
-			  	  	  " and t.ctime >= date_format('"+currStatus.getVecDate().get(0).toString().substring(0, 10)+"', '%Y-%m-%d')" +
-			  	  	  " and t.ctime <= date_format('"+currStatus.getVecDate().get(1).toString().substring(0, 10)+"', '%Y-%m-%d')" +
-			  	  	  " order by t.ctime desc ";
+				Sql = " select t.sn, t.spa_type, t.spa_type_name, t.spa_mode, t.ctype, t.model, t.unit, t.spa_o_time, t.spa_o_stat, t.spa_o_stat_name, t.spa_o_bcnt, t.spa_o_mcnt, t.spa_o_acnt, " +
+			  	  	  " t.spa_o_man, t.spa_o_memo, t.ctime, t.operator, t.operator_name, t.status, t.status_op, t.status_op_name, t.status_memo " +
+			  	  	  " from view_spa_store_o t " +
+			  	  	  " where instr('"+ Cpm_Id +"', t.spa_o_stat) > 0 " +
+			  	  	  "   and t.spa_type like '"+ Func_Corp_Id +"%' " +
+			  	  	  "   and t.ctype like '"+ Func_Sub_Id +"%'" +
+			  	  	  "   and t.status like '"+ Func_Sel_Id +"%'" +
+			  	  	  "   and t.spa_o_time >= date_format('"+currStatus.getVecDate().get(0).toString().substring(0, 10)+"', '%Y-%m-%d')" +
+			  	  	  "   and t.spa_o_time <= date_format('"+currStatus.getVecDate().get(1).toString().substring(0, 10)+"', '%Y-%m-%d')" +
+			  	  	  "   order by t.spa_o_time desc ";
 				break;
-				
-			case 1://去向站点
-				Sql = "select t.sn,t.spa_type,spa_mode,t.unit,t.spa_num,t.spa_price,t.spa_amt,t.ctime,t.spa_memo,t.cpm_id, t.spa_o_oper, t.operator " +
-				  	  " from spa_store_o t " +
-				  	  " group by t.cpm_id "+
-				  	  "ORDER BY t.cpm_id";
-				break;
-			case 2://备品查询
-				Sql = "select t.sn,t.spa_type,spa_mode,t.unit,t.spa_num,t.spa_price,t.spa_amt,t.ctime,t.spa_memo,t.cpm_id, t.spa_o_oper, t.operator " +
-					  " from spa_store_o t " +
-					  " group by t.spa_type ";
-				break;		
-			case 3://类型查询
-				Sql = "select t.sn,t.spa_type,spa_mode,t.unit,t.spa_num,t.spa_price,t.spa_amt,t.ctime,t.spa_memo,t.cpm_id, t.spa_o_oper, t.operator " +
-					  " from spa_store_o t " +
-					  " where t.spa_type like '"+ Func_Corp_Id +"%' " +
-					  " group by t.spa_mode ";				
-				break;
-			case 4://合计站点领用量
-				Sql = "select t.sn,t.spa_type,spa_mode,t.unit,sum(t.spa_num),t.spa_price,t.spa_amt,t.ctime,t.spa_memo,t.cpm_id, t.spa_o_oper, t.operator " +
-					  " from spa_store_o t " +						
-					  " group by t.spa_type,t.spa_mode,t.cpm_id "+
-					  "ORDER BY t.cpm_id,t.spa_type,t.spa_memo ";
-				break;
-				
-			case 5 ://报表合计各站用量
-				Sql = " select t.sn,t.spa_type,spa_mode,t.unit,sum(t.spa_num),t.spa_price,t.spa_amt,t.ctime,t.spa_memo,t.cpm_id, t.spa_o_oper, t.operator " +
-					  " from spa_store_o t " +		
-					  " where t.spa_type like '"+ Func_Corp_Id +"%' " +
-			  	  	  " and t.spa_mode like '"+ Func_Type_Id +"%'" +
-					  " and t.ctime >= '"+currStatus.getVecDate().get(0).toString().substring(0, 10)+"'" +
-					  " and t.ctime <= '"+currStatus.getVecDate().get(1).toString().substring(0, 10)+"' " +
-					  " group by t.spa_type,t.spa_mode,t.cpm_id "+
-					  " ORDER BY t.cpm_id,t.spa_type,t.spa_memo ";				
-				break;				
 			case 10://添加
-				Sql = " insert into spa_store_o(spa_type, spa_mode, unit, spa_num, spa_price, spa_amt, ctime, spa_memo, cpm_id, spa_o_oper, operator)" +
-					  " values('"+ Spa_Type +"', '"+ Spa_Mode +"', '"+ Unit +"', '"+ Spa_Num +"', '"+ Spa_Price +"', '"+ Spa_Amt +"', '"+ CTime +"' , '"+ Spa_Memo +"', '"+ Cpm_Id +"', '"+ Spa_O_Oper +"', '"+ Operator +"')";
+				Sql = " insert into spa_store_o(spa_type, spa_mode, spa_o_time, spa_o_stat, spa_o_bcnt, spa_o_mcnt, spa_o_acnt, spa_o_man, spa_o_memo, ctime, operator)" +
+					  " values('"+ Spa_Type +"', '"+ Spa_Mode +"', '"+ Spa_O_Time +"', '"+ Spa_O_Stat +"', '"+ Spa_O_BCnt +"', '"+ Spa_O_MCnt +"', '"+ Spa_O_ACnt +"', '"+ Spa_O_Man +"', '"+ Spa_O_Memo +"', DATE_FORMAT(now(), '%Y-%m-%d %H:%i:%S'), '"+ Operator +"')";
 				break;
-			
+			case 11://作废
+				Sql = " update spa_store_o t set t.status = '"+ Status +"', t.status_op = '"+ Status_OP +"', t.status_memo = '"+ Status_Memo +"' where t.sn = '"+ SN +"' ";
+				break;
 		}
 		return Sql;
 	}
@@ -483,18 +368,27 @@ public class SpaStoreOBean extends RmiBean
 		try
 		{
 			setSN(pRs.getString(1));
-			setSpa_Type(pRs.getString(2));			
-			setSpa_Mode(pRs.getString(3));		
-			setUnit(pRs.getString(4));
-			setSpa_Num(pRs.getString(5));
-			setSpa_Price(pRs.getString(6));
-			setSpa_Amt(pRs.getString(7));
-			setCTime(pRs.getString(8));
-			setSpa_Memo(pRs.getString(9));
-			setCpm_Id(pRs.getString(10));
-			setSpa_O_Oper(pRs.getString(11));
-			setOperator(pRs.getString(12));
-		
+			setSpa_Type(pRs.getString(2));
+			setSpa_Type_Name(pRs.getString(3));
+			setSpa_Mode(pRs.getString(4));
+			setCType(pRs.getString(5));
+			setModel(pRs.getString(6));
+			setUnit(pRs.getString(7));
+			setSpa_O_Time(pRs.getString(8));
+			setSpa_O_Stat(pRs.getString(9));
+			setSpa_O_Stat_Name(pRs.getString(10));
+			setSpa_O_BCnt(pRs.getString(11));
+			setSpa_O_MCnt(pRs.getString(12));
+			setSpa_O_ACnt(pRs.getString(13));
+			setSpa_O_Man(pRs.getString(14));
+			setSpa_O_Memo(pRs.getString(15));
+			setCTime(pRs.getString(16));
+			setOperator(pRs.getString(17));
+			setOperator_Name(pRs.getString(18));
+			setStatus(pRs.getString(19));
+			setStatus_OP(pRs.getString(20));
+			setStatus_OP_Name(pRs.getString(21));
+			setStatus_Memo(pRs.getString(22));
 		}
 		catch (SQLException sqlExp)
 		{
@@ -510,17 +404,28 @@ public class SpaStoreOBean extends RmiBean
 		{
 			setSN(CommUtil.StrToGB2312(request.getParameter("SN")));
 			setSpa_Type(CommUtil.StrToGB2312(request.getParameter("Spa_Type")));
-			setSpa_Mode(CommUtil.StrToGB2312(request.getParameter("Spa_Mode")));		
+			setSpa_Type_Name(CommUtil.StrToGB2312(request.getParameter("Spa_Type_Name")));
+			setSpa_Mode(CommUtil.StrToGB2312(request.getParameter("Spa_Mode")));
+			setCType(CommUtil.StrToGB2312(request.getParameter("CType")));
+			setModel(CommUtil.StrToGB2312(request.getParameter("Model")));
 			setUnit(CommUtil.StrToGB2312(request.getParameter("Unit")));
-			setSpa_Num(CommUtil.StrToGB2312(request.getParameter("Spa_Num")));
-			setSpa_Price(CommUtil.StrToGB2312(request.getParameter("Spa_Price")));
-			setSpa_Amt(CommUtil.StrToGB2312(request.getParameter("Spa_Amt")));
-			setCTime(CommUtil.StrToGB2312(request.getParameter("CTime")));	
-			setSpa_Memo(CommUtil.StrToGB2312(request.getParameter("Spa_Memo")));
-			setCpm_Id(CommUtil.StrToGB2312(request.getParameter("Cpm_Id")));
-			setSpa_O_Oper(CommUtil.StrToGB2312(request.getParameter("Spa_O_Oper")));
+			setSpa_O_Time(CommUtil.StrToGB2312(request.getParameter("Spa_O_Time")));
+			setSpa_O_Stat(CommUtil.StrToGB2312(request.getParameter("Spa_O_Stat")));
+			setSpa_O_Stat_Name(CommUtil.StrToGB2312(request.getParameter("Spa_O_Stat_Name")));
+			setSpa_O_BCnt(CommUtil.StrToGB2312(request.getParameter("Spa_O_BCnt")));
+			setSpa_O_MCnt(CommUtil.StrToGB2312(request.getParameter("Spa_O_MCnt")));
+			setSpa_O_ACnt(CommUtil.StrToGB2312(request.getParameter("Spa_O_ACnt")));
+			setSpa_O_Man(CommUtil.StrToGB2312(request.getParameter("Spa_O_Man")));
+			setSpa_O_Memo(CommUtil.StrToGB2312(request.getParameter("Spa_O_Memo")));
+			setCTime(CommUtil.StrToGB2312(request.getParameter("CTime")));
 			setOperator(CommUtil.StrToGB2312(request.getParameter("Operator")));
+			setOperator_Name(CommUtil.StrToGB2312(request.getParameter("Operator_Name")));
+			setStatus(CommUtil.StrToGB2312(request.getParameter("Status")));
+			setStatus_OP(CommUtil.StrToGB2312(request.getParameter("Status_OP")));
+			setStatus_OP_Name(CommUtil.StrToGB2312(request.getParameter("Status_OP_Name")));
+			setStatus_Memo(CommUtil.StrToGB2312(request.getParameter("Status_Memo")));
 			
+			setCpm_Id(CommUtil.StrToGB2312(request.getParameter("Cpm_Id")));
 			setSid(CommUtil.StrToGB2312(request.getParameter("Sid")));
 		}
 		catch (Exception Exp)
@@ -532,86 +437,32 @@ public class SpaStoreOBean extends RmiBean
 	
 	private String SN;
 	private String Spa_Type;
+	private String Spa_Type_Name;
 	private String Spa_Mode;
+	private String CType;
+	private String Model;
 	private String Unit;
-	private String Spa_Num;
-	private String Spa_Price;
-	private String Spa_Amt;
-	private String CTime;	
-	private String Spa_Memo;
-	private String Cpm_Id;
-	private String Spa_O_Oper;
+	private String Spa_O_Time;
+	private String Spa_O_Stat;
+	private String Spa_O_Stat_Name;
+	private String Spa_O_BCnt;
+	private String Spa_O_MCnt;
+	private String Spa_O_ACnt;
+	private String Spa_O_Man;
+	private String Spa_O_Memo;
+	private String CTime;
 	private String Operator;
+	private String Operator_Name;
+	private String Status;
+	private String Status_OP;
+	private String Status_OP_Name;
+	private String Status_Memo;
+	
+	private String Cpm_Id;
 	private String Sid;
 	private String Func_Corp_Id;
 	private String Func_Sub_Id;
 	private String Func_Sel_Id;
-	private String Func_Type_Id;
-	private String Func_Cpm_Id;
-	
-	public String getFunc_Cpm_Id() {
-		return Func_Cpm_Id;
-	}
-
-	public void setFunc_Cpm_Id(String func_Cpm_Id) {
-		Func_Cpm_Id = func_Cpm_Id;
-	}
-
-	public String getSpa_O_Oper() {
-		return Spa_O_Oper;
-	}
-
-	public void setSpa_O_Oper(String spa_O_Oper) {
-		Spa_O_Oper = spa_O_Oper;
-	}
-
-	public String getOperator() {
-		return Operator;
-	}
-
-	public void setOperator(String operator) {
-		Operator = operator;
-	}
-
-	public String getSpa_Num() {
-		return Spa_Num;
-	}
-
-	public void setSpa_Num(String spa_Num) {
-		Spa_Num = spa_Num;
-	}
-
-	public String getSpa_Price() {
-		return Spa_Price;
-	}
-
-	public void setSpa_Price(String spa_Price) {
-		Spa_Price = spa_Price;
-	}
-
-	public String getSpa_Amt() {
-		return Spa_Amt;
-	}
-
-	public void setSpa_Amt(String spa_Amt) {
-		Spa_Amt = spa_Amt;
-	}
-
-	public String getSpa_Memo() {
-		return Spa_Memo;
-	}
-
-	public void setSpa_Memo(String spa_Memo) {
-		Spa_Memo = spa_Memo;
-	}
-
-	public String getFunc_Type_Id() {
-		return Func_Type_Id;
-	}
-
-	public void setFunc_Type_Id(String func_Type_Id) {
-		Func_Type_Id = func_Type_Id;
-	}
 	
 	public String getSN() {
 		return SN;
@@ -629,7 +480,13 @@ public class SpaStoreOBean extends RmiBean
 		Spa_Type = spaType;
 	}
 
+	public String getSpa_Type_Name() {
+		return Spa_Type_Name;
+	}
 
+	public void setSpa_Type_Name(String spaTypeName) {
+		Spa_Type_Name = spaTypeName;
+	}
 
 	public String getSpa_Mode() {
 		return Spa_Mode;
@@ -639,7 +496,21 @@ public class SpaStoreOBean extends RmiBean
 		Spa_Mode = spaMode;
 	}
 
-	
+	public String getCType() {
+		return CType;
+	}
+
+	public void setCType(String cType) {
+		CType = cType;
+	}
+
+	public String getModel() {
+		return Model;
+	}
+
+	public void setModel(String model) {
+		Model = model;
+	}
 
 	public String getUnit() {
 		return Unit;
@@ -649,11 +520,69 @@ public class SpaStoreOBean extends RmiBean
 		Unit = unit;
 	}
 
-	
+	public String getSpa_O_Time() {
+		return Spa_O_Time;
+	}
 
+	public void setSpa_O_Time(String spaOTime) {
+		Spa_O_Time = spaOTime;
+	}
 
+	public String getSpa_O_Stat() {
+		return Spa_O_Stat;
+	}
 
-	
+	public void setSpa_O_Stat(String spaOStat) {
+		Spa_O_Stat = spaOStat;
+	}
+
+	public String getSpa_O_Stat_Name() {
+		return Spa_O_Stat_Name;
+	}
+
+	public void setSpa_O_Stat_Name(String spaOStatName) {
+		Spa_O_Stat_Name = spaOStatName;
+	}
+
+	public String getSpa_O_BCnt() {
+		return Spa_O_BCnt;
+	}
+
+	public void setSpa_O_BCnt(String spaOBCnt) {
+		Spa_O_BCnt = spaOBCnt;
+	}
+
+	public String getSpa_O_MCnt() {
+		return Spa_O_MCnt;
+	}
+
+	public void setSpa_O_MCnt(String spaOMCnt) {
+		Spa_O_MCnt = spaOMCnt;
+	}
+
+	public String getSpa_O_ACnt() {
+		return Spa_O_ACnt;
+	}
+
+	public void setSpa_O_ACnt(String spaOACnt) {
+		Spa_O_ACnt = spaOACnt;
+	}
+
+	public String getSpa_O_Man() {
+		return Spa_O_Man;
+	}
+
+	public void setSpa_O_Man(String spaOMan) {
+		Spa_O_Man = spaOMan;
+	}
+
+	public String getSpa_O_Memo() {
+		return Spa_O_Memo;
+	}
+
+	public void setSpa_O_Memo(String spaOMemo) {
+		Spa_O_Memo = spaOMemo;
+	}
 
 	public String getCTime() {
 		return CTime;
@@ -663,9 +592,53 @@ public class SpaStoreOBean extends RmiBean
 		CTime = cTime;
 	}
 
-	
-	
+	public String getOperator() {
+		return Operator;
+	}
 
+	public void setOperator(String operator) {
+		Operator = operator;
+	}
+
+	public String getOperator_Name() {
+		return Operator_Name;
+	}
+
+	public void setOperator_Name(String operatorName) {
+		Operator_Name = operatorName;
+	}
+
+	public String getStatus() {
+		return Status;
+	}
+
+	public void setStatus(String status) {
+		Status = status;
+	}
+
+	public String getStatus_OP() {
+		return Status_OP;
+	}
+
+	public void setStatus_OP(String statusOP) {
+		Status_OP = statusOP;
+	}
+
+	public String getStatus_OP_Name() {
+		return Status_OP_Name;
+	}
+
+	public void setStatus_OP_Name(String statusOPName) {
+		Status_OP_Name = statusOPName;
+	}
+
+	public String getStatus_Memo() {
+		return Status_Memo;
+	}
+
+	public void setStatus_Memo(String statusMemo) {
+		Status_Memo = statusMemo;
+	}
 
 	public String getCpm_Id() {
 		return Cpm_Id;

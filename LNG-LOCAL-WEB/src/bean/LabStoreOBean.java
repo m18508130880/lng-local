@@ -1,9 +1,7 @@
 package bean;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintWriter;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -12,14 +10,10 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 
-import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.jspsmart.upload.SmartUpload;
-
-import jxl.Sheet;
 import jxl.Workbook;
 import jxl.format.Alignment;
 import jxl.format.Border;
@@ -45,7 +39,7 @@ public class LabStoreOBean extends RmiBean
 	public LabStoreOBean()
 	{
 		super.className = "LabStoreOBean";
-	} 
+	}
 	
 	public void ExecCmd(HttpServletRequest request, HttpServletResponse response, Rmi pRmi, boolean pFromZone) throws ServletException, IOException
 	{
@@ -66,21 +60,11 @@ public class LabStoreOBean extends RmiBean
 		{
 			Func_Sub_Id = "";
 		}
-		Func_Type_Id = currStatus.getFunc_Type_Id();
-		if(null == Func_Type_Id || Func_Type_Id.equals("888"))
-		{
-			Func_Type_Id = "";
-		}
 		
-		Func_Cpm_Id = currStatus.getFunc_Cpm_Id();
-		if(null == Func_Cpm_Id || Func_Cpm_Id.equals("666"))
-		{
-			Func_Cpm_Id = "";
-		}
 		msgBean = pRmi.RmiExec(currStatus.getCmd(), this, currStatus.getCurrPage());
 		switch(currStatus.getCmd())
-		{			
-			case 13:
+		{
+			case 11://作废
 			case 10://添加
 				currStatus.setResult(MsgBean.GetResult(msgBean.getStatus()));
 				msgBean = pRmi.RmiExec(0, this, currStatus.getCurrPage());
@@ -89,13 +73,11 @@ public class LabStoreOBean extends RmiBean
 		    	currStatus.setTotalRecord(msgBean.getCount());
 		    	currStatus.setJsp("Lab_Store_O.jsp?Sid=" + Sid);
 		    	
-		    	//领用单位查询
-		    	msgBean = pRmi.RmiExec(1, this, 0);
+		    	//库存台账
+		    	LabStoreBean Store = new LabStoreBean();
+		    	Store.setFunc_Corp_Id("");
+		    	msgBean = pRmi.RmiExec(0, Store, 0);
 				request.getSession().setAttribute("Lab_Store_" + Sid, (Object)msgBean.getMsg());
-				//劳保用品查询
-		    	msgBean = pRmi.RmiExec(2, this, 0);
-				request.getSession().setAttribute("Lab_Store_Type_" + Sid, (Object)msgBean.getMsg());
-				
 		    	break;
 		}
 		
@@ -338,105 +320,6 @@ public class LabStoreOBean extends RmiBean
 		request.getSession().setAttribute("CurrStatus_" + Sid, currStatus);
 		outprint.write(Resp);
 	}
-	//出库批量导入
-	public void DaoLabOFile(HttpServletRequest request, HttpServletResponse response, Rmi pRmi, boolean pFromZone, ServletConfig pConfig) 
-	{
-		try
-		{	
-			SmartUpload mySmartUpload = new SmartUpload();
-			mySmartUpload.initialize(pConfig, request, response);
-			mySmartUpload.setAllowedFilesList("xls,xlsx,XLS,XLSX,");
-			mySmartUpload.upload();
-			
-			Sid = mySmartUpload.getRequest().getParameter("Sid");
-			currStatus = (CurrStatus)request.getSession().getAttribute("CurrStatus_" + Sid);						
-			System.out.println("Sid"+Sid+"[]"+"currStatus"+currStatus);
-			if(mySmartUpload.getFiles().getCount() > 0 && mySmartUpload.getFiles().getFile(0).getFilePathName().trim().length() > 0)
-			{
-				if(mySmartUpload.getFiles().getFile(0).getSize()/1024 <= 3072)//最大3M
-				{		
-					String FileSaveRoute = "/www/LNG-LOCAL/LNG-LOCAL-WEB/files/upfiles/";										
-					//上传现有文档			
-					com.jspsmart.upload.File myFile = mySmartUpload.getFiles().getFile(0);		
-					String File_Name = new SimpleDateFormat("yyyyMMdd").format(new Date()) + CommUtil.Randon()+ "." + myFile.getFileExt();			
-					myFile.saveAs(FileSaveRoute + File_Name);						
-					//录入数据库
-					InputStream is = new FileInputStream(FileSaveRoute + File_Name);
-					Workbook rwb = Workbook.getWorkbook(is);					
-					Sheet rs = rwb.getSheet(0);					
-				    int rsRows = rs.getRows();		
-				    int succCnt = 0;	
-				    for(int i=3; i<rsRows; i++)
-				    {
-				    	if(null==rs.getCell(1, i).getContents().trim()||"".equals(rs.getCell(1, i).getContents().trim()))
-				    	{
-				    
-				    		break;//当excel文档第一行为空时，退出循环
-				    		}
-				    	Lab_Type    = rs.getCell(1, i).getContents().trim();	//备件名称				    	
-				    	Lab_Mode    = rs.getCell(2, i).getContents().trim();	//规格型号	 
-				    	Lab_O_Ycnt       = rs.getCell(3, i).getContents().trim();
-				    	Lab_O_Scnt     = rs.getCell(4, i).getContents().trim();
-				    	Operator   = rs.getCell(5, i).getContents().trim();
-				    	Operator_Name     = rs.getCell(6, i).getContents().trim();				    	
-				    	Foperator    = rs.getCell(7, i).getContents().trim();	
-				    	CTime      = rs.getCell(8, i).getContents().trim();
-				    	Status_Memo = rs.getCell(9, i).getContents().trim();				    	
-				    	msgBean = pRmi.RmiExec(10, this, 0);
-				    	if(msgBean.getStatus() == MsgBean.STA_SUCCESS)
-						{
-				    		succCnt ++;
-						}
-				    }	
-				    currStatus.setResult("成功导入[" + String.valueOf(succCnt) + "/" + String.valueOf(rsRows-3) + "]个");
-				}
-				else
-				{
-					currStatus.setResult("文档上传失败！文档过大，必须小于3M!");
-				}				
-			}
-			
-			Func_Corp_Id = currStatus.getFunc_Corp_Id();
-			if(null == Func_Corp_Id || Func_Corp_Id.equals("9999"))
-			{
-				Func_Corp_Id = "";
-			}			
-			
-			Func_Type_Id = currStatus.getFunc_Type_Id();
-			if(null == Func_Type_Id || Func_Type_Id.equals("888"))
-			{
-				Func_Type_Id = "";
-			}
-			Func_Cpm_Id = currStatus.getFunc_Cpm_Id();
-			if(null == Func_Cpm_Id || Func_Cpm_Id.equals("666"))
-			{
-				Func_Cpm_Id = "";
-			}
-			
-			msgBean = pRmi.RmiExec(0, this, 0);			
-			request.getSession().setAttribute("Lab_Store_O_" + Sid, ((Object)msgBean.getMsg()));
-	    	currStatus.setTotalRecord(msgBean.getCount());
-	    	currStatus.setJsp("Lab_Store_O.jsp?Sid=" + Sid);
-	    	
-	    	//领用单位查询
-	    	msgBean = pRmi.RmiExec(1, this, 0);
-			request.getSession().setAttribute("Lab_Store_" + Sid, (Object)msgBean.getMsg());
-			//劳保用品查询
-	    	msgBean = pRmi.RmiExec(2, this, 0);
-			request.getSession().setAttribute("Lab_Store_Type_" + Sid, (Object)msgBean.getMsg());							
-			request.getSession().setAttribute("CurrStatus_" + Sid, currStatus);
-		   	response.sendRedirect(currStatus.getJsp());
-		}
-		catch(Exception exp)
-		{
-			exp.printStackTrace();
-		}
-	
-	}
-	
-	
-	
-	
 	
 	public String getSql(int pCmd)
 	{
@@ -444,50 +327,22 @@ public class LabStoreOBean extends RmiBean
 		switch (pCmd)
 		{
 			case 0://查询
-				Sql = " select t.sn,t.lab_type,t.lab_mode,t.lab_o_ycnt,t.lab_o_scnt,t.operator,t.operator_name,t.foperator,t.ctime,t.status_memo " +
-		  	  	  	  " from lab_store_o t " +
-		  	  	  	  " where t.operator  like '"+ Func_Cpm_Id +"%' " +
-			  	  	  " and t.lab_type like '"+ Func_Corp_Id +"%' " +
-			  	  	  " and t.lab_mode like '"+ Func_Type_Id +"%'" +
-			  	  	  " and t.ctime >= date_format('"+currStatus.getVecDate().get(0).toString().substring(0, 10)+"', '%Y-%m-%d')" +
-			  	  	  " and t.ctime <= date_format('"+currStatus.getVecDate().get(1).toString().substring(0, 10)+"', '%Y-%m-%d')" +
-			  	  	  " order by t.lab_type, t.lab_mode, t.ctime desc ";
+				Sql = " select t.sn, t.lab_type, t.lab_type_name, t.lab_mode, t.model, t.unit, t.lab_o_time, t.lab_o_stat, t.lab_o_stat_name, t.lab_o_bcnt, t.lab_o_mcnt, t.lab_o_acnt, " +
+		  	  	  	  " t.lab_o_man, t.lab_o_memo, t.ctime, t.operator, t.operator_name, t.status, t.status_op, t.status_op_name, t.status_memo " +
+		  	  	  	  " from view_lab_store_o t " +
+		  	  	  	  " where instr('"+ Cpm_Id +"', t.lab_o_stat) > 0 " +
+			  	  	  "   and t.lab_type like '"+ Func_Corp_Id +"%' " +
+			  	  	  "   and t.status like '"+ Func_Sub_Id +"%'" +
+			  	  	  "   and t.lab_o_time >= date_format('"+currStatus.getVecDate().get(0).toString().substring(0, 10)+"', '%Y-%m-%d')" +
+			  	  	  "   and t.lab_o_time <= date_format('"+currStatus.getVecDate().get(1).toString().substring(0, 10)+"', '%Y-%m-%d')" +
+			  	  	  "   order by t.lab_o_time desc ";
 				break;
-				
-			case 1 ://领用单位查询
-				Sql = " select t.sn,t.lab_type,t.lab_mode,t.lab_o_ycnt,t.lab_o_scnt,t.operator,t.operator_name,t.foperator,t.ctime,t.status_memo " +
-					  "from lab_store_o t"+
-					  " group by t.operator"+
-					  " order by t.operator";
-				break;
-			case 2://劳保查询
-				Sql = " select t.sn,t.lab_type,t.lab_mode,t.lab_o_ycnt,t.lab_o_scnt,t.operator,t.operator_name,t.foperator,t.ctime,t.status_memo " +
-					  "from lab_store_o t "+
-					  "group by t.lab_type";
-				break;
-			case 3://统计查询
-				Sql = " select t.sn,t.lab_type,t.lab_mode,sum(t.lab_o_ycnt),sum(t.lab_o_scnt),t.operator,t.operator_name,t.foperator,t.ctime,t.status_memo " +
-			  	  	  " from lab_store_o t " +			 	  	 
-			  	  	  " where t.lab_type like '"+ Func_Corp_Id +"%' " +
-			  	  	  " and t.lab_mode like '"+ Func_Type_Id +"%'" +
-			  	  	  " and t.ctime >= '"+currStatus.getVecDate().get(0).toString().substring(0, 10)+"'" +
-					  " and t.ctime <= '"+currStatus.getVecDate().get(1).toString().substring(0, 10)+"' " +
-			  	  	  " group by t.operator,t.lab_type,t.lab_mode "+
-					  " order by t.operator,t.lab_type,t.lab_mode";
-				break;
-			case 4://合计站点用量	
-				Sql = " select t.sn,t.lab_type,t.lab_mode,t.lab_o_ycnt,sum(t.lab_o_scnt),t.operator,t.operator_name,t.foperator,t.ctime,t.status_memo " +
-				  	  " from lab_store_o t " +	
-				  	  " group by t.operator, t.lab_type, t.lab_mode "+
-				  	  " ORDER BY t.operator, t.lab_type, t.lab_mode ";
-				break;
-				
 			case 10://添加
-				Sql = " insert into lab_store_o(lab_type, lab_mode,lab_o_ycnt, lab_o_scnt,operator,operator_name,foperator,ctime,status_memo)" +
-					  " values('"+ Lab_Type +"', '"+ Lab_Mode +"', '"+ Lab_O_Ycnt +"', '"+ Lab_O_Scnt +"', '"+ Operator +"', '"+ Operator_Name +"', '"+ Foperator +"', '"+ CTime +"' , '"+ Status_Memo +"')";
-				break;		
-			case 13://删除
-				Sql = " delete from lab_store_o where sn = '"+ SN +"' ";
+				Sql = " insert into lab_store_o(lab_type, lab_mode, lab_o_time, lab_o_stat, lab_o_bcnt, lab_o_mcnt, lab_o_acnt, lab_o_man, lab_o_memo, ctime, operator)" +
+					  " values('"+ Lab_Type +"', '"+ Lab_Mode +"', '"+ Lab_O_Time +"', '"+ Lab_O_Stat +"', '"+ Lab_O_BCnt +"', '"+ Lab_O_MCnt +"', '"+ Lab_O_ACnt +"', '"+ Lab_O_Man +"', '"+ Lab_O_Memo +"', DATE_FORMAT(now(), '%Y-%m-%d %H:%i:%S'), '"+ Operator +"')";
+				break;
+			case 11://作废
+				Sql = " update lab_store_o t set t.status = '"+ Status +"', t.status_op = '"+ Status_OP +"', t.status_memo = '"+ Status_Memo +"' where t.sn = '"+ SN +"' ";
 				break;
 		}
 		return Sql;
@@ -500,14 +355,25 @@ public class LabStoreOBean extends RmiBean
 		{
 			setSN(pRs.getString(1));
 			setLab_Type(pRs.getString(2));
-			setLab_Mode(pRs.getString(3));	
-			setLab_O_Ycnt(pRs.getString(4));
-			setLab_O_Scnt(pRs.getString(5));			
-			setOperator(pRs.getString(6));
-			setOperator_Name(pRs.getString(7));
-			setFoperator(pRs.getString(8));
-			setCTime(pRs.getString(9));
-			setStatus_Memo(pRs.getString(10));
+			setLab_Type_Name(pRs.getString(3));
+			setLab_Mode(pRs.getString(4));
+			setModel(pRs.getString(5));
+			setUnit(pRs.getString(6));
+			setLab_O_Time(pRs.getString(7));
+			setLab_O_Stat(pRs.getString(8));
+			setLab_O_Stat_Name(pRs.getString(9));
+			setLab_O_BCnt(pRs.getString(10));
+			setLab_O_MCnt(pRs.getString(11));
+			setLab_O_ACnt(pRs.getString(12));
+			setLab_O_Man(pRs.getString(13));
+			setLab_O_Memo(pRs.getString(14));
+			setCTime(pRs.getString(15));
+			setOperator(pRs.getString(16));
+			setOperator_Name(pRs.getString(17));
+			setStatus(pRs.getString(18));
+			setStatus_OP(pRs.getString(19));
+			setStatus_OP_Name(pRs.getString(20));
+			setStatus_Memo(pRs.getString(21));
 		}
 		catch (SQLException sqlExp)
 		{
@@ -523,13 +389,24 @@ public class LabStoreOBean extends RmiBean
 		{
 			setSN(CommUtil.StrToGB2312(request.getParameter("SN")));
 			setLab_Type(CommUtil.StrToGB2312(request.getParameter("Lab_Type")));
+			setLab_Type_Name(CommUtil.StrToGB2312(request.getParameter("Lab_Type_Name")));
 			setLab_Mode(CommUtil.StrToGB2312(request.getParameter("Lab_Mode")));
-			setLab_O_Ycnt(CommUtil.StrToGB2312(request.getParameter("Lab_O_Ycnt")));
-			setLab_O_Scnt(CommUtil.StrToGB2312(request.getParameter("Lab_O_Scnt")));				
+			setModel(CommUtil.StrToGB2312(request.getParameter("Model")));
+			setUnit(CommUtil.StrToGB2312(request.getParameter("Unit")));
+			setLab_O_Time(CommUtil.StrToGB2312(request.getParameter("Lab_O_Time")));
+			setLab_O_Stat(CommUtil.StrToGB2312(request.getParameter("Lab_O_Stat")));
+			setLab_O_Stat_Name(CommUtil.StrToGB2312(request.getParameter("Lab_O_Stat_Name")));
+			setLab_O_BCnt(CommUtil.StrToGB2312(request.getParameter("Lab_O_BCnt")));
+			setLab_O_MCnt(CommUtil.StrToGB2312(request.getParameter("Lab_O_MCnt")));
+			setLab_O_ACnt(CommUtil.StrToGB2312(request.getParameter("Lab_O_ACnt")));
+			setLab_O_Man(CommUtil.StrToGB2312(request.getParameter("Lab_O_Man")));
+			setLab_O_Memo(CommUtil.StrToGB2312(request.getParameter("Lab_O_Memo")));
+			setCTime(CommUtil.StrToGB2312(request.getParameter("CTime")));
 			setOperator(CommUtil.StrToGB2312(request.getParameter("Operator")));
 			setOperator_Name(CommUtil.StrToGB2312(request.getParameter("Operator_Name")));
-			setFoperator(CommUtil.StrToGB2312(request.getParameter("Foperator")));
-			setCTime(CommUtil.StrToGB2312(request.getParameter("CTime")));
+			setStatus(CommUtil.StrToGB2312(request.getParameter("Status")));
+			setStatus_OP(CommUtil.StrToGB2312(request.getParameter("Status_OP")));
+			setStatus_OP_Name(CommUtil.StrToGB2312(request.getParameter("Status_OP_Name")));
 			setStatus_Memo(CommUtil.StrToGB2312(request.getParameter("Status_Memo")));
 			
 			setCpm_Id(CommUtil.StrToGB2312(request.getParameter("Cpm_Id")));
@@ -543,16 +420,9 @@ public class LabStoreOBean extends RmiBean
 	}
 	
 	private String SN;
-	private String Lab_Type;	
+	private String Lab_Type;
+	private String Lab_Type_Name;
 	private String Lab_Mode;
-	private String Lab_O_Ycnt;
-	private String Lab_O_Scnt;
-	private String Operator;
-	private String Operator_Name;
-	private String Foperator;
-	private String CTime;	
-	private String Status_Memo;
-	
 	private String Model;
 	private String Unit;
 	private String Lab_O_Time;
@@ -563,56 +433,19 @@ public class LabStoreOBean extends RmiBean
 	private String Lab_O_ACnt;
 	private String Lab_O_Man;
 	private String Lab_O_Memo;
+	private String CTime;
+	private String Operator;
+	private String Operator_Name;
 	private String Status;
 	private String Status_OP;
 	private String Status_OP_Name;
-	private String Lab_Type_Name;
+	private String Status_Memo;
+	
 	private String Cpm_Id;
 	private String Sid;
 	private String Func_Corp_Id;
 	private String Func_Sub_Id;
-	private String Func_Type_Id;
-	private String Func_Cpm_Id;
-	public String getFunc_Cpm_Id() {
-		return Func_Cpm_Id;
-	}
-
-	public void setFunc_Cpm_Id(String func_Cpm_Id) {
-		Func_Cpm_Id = func_Cpm_Id;
-	}
-
-	public String getFunc_Type_Id() {
-		return Func_Type_Id;
-	}
-
-	public void setFunc_Type_Id(String func_Type_Id) {
-		Func_Type_Id = func_Type_Id;
-	}
-
-	public String getLab_O_Ycnt() {
-		return Lab_O_Ycnt;
-	}
-
-	public void setLab_O_Ycnt(String lab_O_Ycnt) {
-		Lab_O_Ycnt = lab_O_Ycnt;
-	}
-
-	public String getLab_O_Scnt() {
-		return Lab_O_Scnt;
-	}
-
-	public void setLab_O_Scnt(String lab_O_Scnt) {
-		Lab_O_Scnt = lab_O_Scnt;
-	}
-
-	public String getFoperator() {
-		return Foperator;
-	}
-
-	public void setFoperator(String foperator) {
-		Foperator = foperator;
-	}
-
+	
 	public String getSN() {
 		return SN;
 	}

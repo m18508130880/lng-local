@@ -1,9 +1,7 @@
 package bean;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintWriter;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -12,14 +10,10 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 
-import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.jspsmart.upload.SmartUpload;
-
-import jxl.Sheet;
 import jxl.Workbook;
 import jxl.format.Alignment;
 import jxl.format.Border;
@@ -44,7 +38,7 @@ public class LabStoreBean extends RmiBean
 	
 	public LabStoreBean()
 	{
-		super.className = "LabStoreBean"; 
+		super.className = "LabStoreBean";
 	}
 	
 	public void ExecCmd(HttpServletRequest request, HttpServletResponse response, Rmi pRmi, boolean pFromZone) throws ServletException, IOException
@@ -70,40 +64,12 @@ public class LabStoreBean extends RmiBean
 			case 0://查询
 		    	request.getSession().setAttribute("Lab_Store_" + Sid, ((Object)msgBean.getMsg()));
 		    	currStatus.setJsp("Lab_Store.jsp?Sid=" + Sid);
-		    			    	
-		    	//用品类型		    
-		    	msgBean = pRmi.RmiExec(1, this, 0);
+		    	
+		    	//用品类型
+		    	AqscLabourTypeBean LabourType = new AqscLabourTypeBean();
+		    	msgBean = pRmi.RmiExec(0, LabourType, 0);
 		    	request.getSession().setAttribute("Lab_Store_Type_" + Sid, ((Object)msgBean.getMsg()));
-		    	
-		    	LabStoreOBean oBean = new LabStoreOBean();
-		    	msgBean = pRmi.RmiExec(1, oBean, 0);//查询领用站点
-		    	request.getSession().setAttribute("Lab_O_Cpm_" + Sid, ((Object)msgBean.getMsg()));
-		    	msgBean = pRmi.RmiExec(4, oBean, 0);//查询领用站点合计领用量
-		    	request.getSession().setAttribute("Lab_O_ALL_" + Sid, ((Object)msgBean.getMsg()));
 		    	break;
-		    	
-			case 1://统计报表		
-				//用品类型
-				request.getSession().setAttribute("Lab_Store_LType_" + Sid, ((Object)msgBean.getMsg()));		
-				//台账信息
-				msgBean = pRmi.RmiExec(2, this, 0);
-				request.getSession().setAttribute("Lab_Store_L_" + Sid, ((Object)msgBean.getMsg()));
-				
-				//出库信息
-				LabStoreOBean obean = new LabStoreOBean();
-				obean.setFunc_Corp_Id(Func_Corp_Id);
-				obean.setFunc_Type_Id(Func_Type_Id);
-				obean.currStatus = currStatus;
-				msgBean = pRmi.RmiExec(1, obean, 0);//站点
-				request.getSession().setAttribute("Lab_Store_Cpm_" + Sid, ((Object)msgBean.getMsg()));
-				msgBean = pRmi.RmiExec(3, obean, 0);//信息
-				request.getSession().setAttribute("Lab_Store_LO_" + Sid, ((Object)msgBean.getMsg()));
-				currStatus.setJsp("Lab_TJ.jsp?Sid=" + Sid);
-				break;
-		    	
-		    	
-		    	
-		    	
 		}
 		
 		request.getSession().setAttribute("CurrStatus_" + Sid, currStatus);
@@ -354,87 +320,6 @@ public class LabStoreBean extends RmiBean
 		request.getSession().setAttribute("CurrStatus_" + Sid, currStatus);
 		outprint.write(Resp);
 	}
-	//库存台账批量导入
-	public void DaoLabFile(HttpServletRequest request, HttpServletResponse response, Rmi pRmi, boolean pFromZone, ServletConfig pConfig) 
-	{
-		try
-		{			
-			SmartUpload mySmartUpload = new SmartUpload();
-			mySmartUpload.initialize(pConfig, request, response);
-			mySmartUpload.setAllowedFilesList("xls,xlsx,XLS,XLSX,");
-			mySmartUpload.upload();
-									
-			Sid = mySmartUpload.getRequest().getParameter("Sid");
-			currStatus = (CurrStatus)request.getSession().getAttribute("CurrStatus_" + Sid);						
-			System.out.println("Sid"+Sid+"[]"+"currStatus"+currStatus);
-			if(mySmartUpload.getFiles().getCount() > 0 && mySmartUpload.getFiles().getFile(0).getFilePathName().trim().length() > 0)
-			{
-				if(mySmartUpload.getFiles().getFile(0).getSize()/1024 <= 3072)//最大3M
-				{		
-					String FileSaveRoute = "/www/LNG-LOCAL/LNG-LOCAL-WEB/files/upfiles/";										
-					//上传现有文档			
-					com.jspsmart.upload.File myFile = mySmartUpload.getFiles().getFile(0);		
-					String File_Name = new SimpleDateFormat("yyyyMMdd").format(new Date()) + CommUtil.Randon()+ "." + myFile.getFileExt();			
-					myFile.saveAs(FileSaveRoute + File_Name);						
-					//录入数据库
-					InputStream is = new FileInputStream(FileSaveRoute + File_Name);
-					Workbook rwb = Workbook.getWorkbook(is);					
-					Sheet rs = rwb.getSheet(0);					
-				    int rsRows = rs.getRows();		
-				    int succCnt = 0;	
-				    for(int i=5; i<rsRows; i++)
-				    {
-				    	if(null==rs.getCell(1, i).getContents().trim()||"".equals(rs.getCell(1, i).getContents().trim()))
-				    	{
-				    
-				    		break;//当excel文档第一行为空时，退出循环
-				    		}
-				    	Lab_Type    = rs.getCell(1, i).getContents().trim();	//备件名称				    	
-				    	Lab_Mode    = rs.getCell(2, i).getContents().trim();	//规格型号	    				  
-				    	Unit        = rs.getCell(3, i).getContents().trim();	//单位
-				    	if(null==rs.getCell(4, i).getContents().trim()||"".equals(rs.getCell(4, i).getContents().trim()))
-				    	{Lab_I_Cnt ="0";}else{Lab_I_Cnt   = rs.getCell(4, i).getContents().trim();}   //上期结存					    	
-				    	if(null==rs.getCell(5, i).getContents().trim()||"".equals(rs.getCell(5, i).getContents().trim()))
-				    	{Lab_A_Cnt = "0";}else{Lab_A_Cnt   = rs.getCell(5, i).getContents().trim();} //保底存量
-				    	Lab_O_Cnt = "0";//进库数量
-				    	Lab_S_Cnt = "0";//出库数量
-				    	msgBean = pRmi.RmiExec(10, this, 0);
-				    	if(msgBean.getStatus() == MsgBean.STA_SUCCESS)
-						{
-				    		succCnt ++;
-						}
-				    }	
-				    currStatus.setResult("成功导入[" + String.valueOf(succCnt) + "/" + String.valueOf(rsRows-5) + "]个");
-				}
-				else
-				{
-					currStatus.setResult("文档上传失败！文档过大，必须小于3M!");
-				}				
-			}
-			
-			Func_Corp_Id = currStatus.getFunc_Corp_Id();
-			if(null == Func_Corp_Id || Func_Corp_Id.equals("9999"))
-			{
-				Func_Corp_Id = "";
-			}						
-			msgBean = pRmi.RmiExec(0, this, 0);
-			request.getSession().setAttribute("Lab_Store_" + Sid, ((Object)msgBean.getMsg()));
-	    	currStatus.setJsp("Lab_Store.jsp?Sid=" + Sid);
-	    		    	
-	    	//用品类型
-	    	msgBean = pRmi.RmiExec(1, this, 0);
-	    	request.getSession().setAttribute("Lab_Store_Type_" + Sid, ((Object)msgBean.getMsg()));
-			request.getSession().setAttribute("CurrStatus_" + Sid, currStatus);
-		   	response.sendRedirect(currStatus.getJsp());
-		}
-		catch(Exception exp)
-		{
-			exp.printStackTrace();
-		}
-	
-	}
-	
-	
 	
 	public String getSql(int pCmd)
 	{
@@ -442,28 +327,13 @@ public class LabStoreBean extends RmiBean
 		switch (pCmd)
 		{
 			case 0://查询
-				Sql = " select t.lab_type, t.lab_mode, t.lab_i_cnt, t.lab_o_cnt, t.lab_s_cnt, t.lab_a_cnt,  t.ctime , t.unit" +
-					  " from (select a.lab_type, a.lab_mode, a.lab_i_cnt, a.lab_o_cnt, a.lab_s_cnt, a.lab_a_cnt,  a.ctime , a.unit from lab_store a  where a.lab_type like '"+ Func_Corp_Id +"%' order by a.ctime desc) as t " +					
-					  " group by t.lab_type, t.lab_mode  ";
+				Sql = " select t.lab_type, t.lab_type_name, t.lab_mode, t.lab_i_cnt, t.lab_o_cnt, t.lab_s_cnt, t.lab_a_cnt, t.model, t.unit, t.brand, t.seller, t.ctime, t.operator, t.operator_name " +
+					  " from view_lab_store t " +
+					  " where t.lab_type like '"+ Func_Corp_Id +"%' " +
+					  " order by t.lab_type, t.lab_mode asc ";
 				break;
-			case 1: //查询所有劳保用品
-				Sql = " select t.lab_type, t.lab_mode, t.lab_i_cnt, t.lab_o_cnt, t.lab_s_cnt, t.lab_a_cnt,  t.ctime , t.unit" +
-					  " from lab_store t"+
-					  " group by t.lab_type";
-				break;
-			case 2://统计台账查询
-				Sql = " select t.lab_type, t.lab_mode, t.lab_i_cnt, t.lab_o_cnt, t.lab_s_cnt, t.lab_a_cnt,  t.ctime , t.unit" +
-					  " from (select a.lab_type, a.lab_mode, a.lab_i_cnt, a.lab_o_cnt, a.lab_s_cnt, a.lab_a_cnt,  a.ctime , a.unit " +
-					  " from lab_store a  " +
-					  " where a.lab_type like '"+ Func_Corp_Id +"%' " +
-					  " and a.ctime >= '"+currStatus.getVecDate().get(0).toString().substring(0, 10)+"' " +
-					  " and a.ctime <= '"+currStatus.getVecDate().get(1).toString().substring(0, 10)+"' " +
-					  " order by a.ctime desc) as t " +					
-					  " group by t.lab_type, t.lab_mode  ";
-				break;
-																				
 			case 10://添加
-				Sql = " insert into lab_store(lab_type, lab_mode, lab_i_cnt, lab_o_cnt, lab_s_cnt, lab_a_cnt, ctime ,unit)values('"+ Lab_Type +"', '"+ Lab_Mode +"', '"+ Lab_I_Cnt +"', '"+ Lab_O_Cnt +"', '"+ Lab_S_Cnt +"', '"+ Lab_A_Cnt +"', DATE_FORMAT(now(), '%Y-%m-%d %H:%i:%S'), '"+ Unit +"')";
+				Sql = " insert into lab_store(lab_type, lab_mode, lab_a_cnt, ctime, operator)values('"+ Lab_Type +"', '"+ Lab_Mode +"', '"+ Lab_A_Cnt +"', DATE_FORMAT(now(), '%Y-%m-%d %H:%i:%S'), '"+ Operator +"')";
 				break;
 			case 11://阀值
 				Sql = " update lab_store t set t.lab_a_cnt = '"+ Lab_A_Cnt +"' where t.lab_type = '"+ Lab_Type +"' and t.lab_mode = '"+ Lab_Mode +"' ";
@@ -480,14 +350,20 @@ public class LabStoreBean extends RmiBean
 		boolean IsOK = true;
 		try
 		{
-			setLab_Type(pRs.getString(1));			
-			setLab_Mode(pRs.getString(2));
-			setLab_I_Cnt(pRs.getString(3));
-			setLab_O_Cnt(pRs.getString(4));
-			setLab_S_Cnt(pRs.getString(5));
-			setLab_A_Cnt(pRs.getString(6));
-			setCTime(pRs.getString(7));
-			setUnit(pRs.getString(8));									
+			setLab_Type(pRs.getString(1));
+			setLab_Type_Name(pRs.getString(2));
+			setLab_Mode(pRs.getString(3));
+			setLab_I_Cnt(pRs.getString(4));
+			setLab_O_Cnt(pRs.getString(5));
+			setLab_S_Cnt(pRs.getString(6));
+			setLab_A_Cnt(pRs.getString(7));
+			setModel(pRs.getString(8));
+			setUnit(pRs.getString(9));
+			setBrand(pRs.getString(10));
+			setSeller(pRs.getString(11));
+			setCTime(pRs.getString(12));
+			setOperator(pRs.getString(13));
+			setOperator_Name(pRs.getString(14));
 		}
 		catch (SQLException sqlExp)
 		{
@@ -502,13 +378,19 @@ public class LabStoreBean extends RmiBean
 		try
 		{
 			setLab_Type(CommUtil.StrToGB2312(request.getParameter("Lab_Type")));
+			setLab_Type_Name(CommUtil.StrToGB2312(request.getParameter("Lab_Type_Name")));
 			setLab_Mode(CommUtil.StrToGB2312(request.getParameter("Lab_Mode")));
 			setLab_I_Cnt(CommUtil.StrToGB2312(request.getParameter("Lab_I_Cnt")));
 			setLab_O_Cnt(CommUtil.StrToGB2312(request.getParameter("Lab_O_Cnt")));
 			setLab_S_Cnt(CommUtil.StrToGB2312(request.getParameter("Lab_S_Cnt")));
 			setLab_A_Cnt(CommUtil.StrToGB2312(request.getParameter("Lab_A_Cnt")));
+			setModel(CommUtil.StrToGB2312(request.getParameter("Model")));
 			setUnit(CommUtil.StrToGB2312(request.getParameter("Unit")));
+			setBrand(CommUtil.StrToGB2312(request.getParameter("Brand")));
+			setSeller(CommUtil.StrToGB2312(request.getParameter("Seller")));
 			setCTime(CommUtil.StrToGB2312(request.getParameter("CTime")));
+			setOperator(CommUtil.StrToGB2312(request.getParameter("Operator")));
+			setOperator_Name(CommUtil.StrToGB2312(request.getParameter("Operator_Name")));
 			setSid(CommUtil.StrToGB2312(request.getParameter("Sid")));
 		}
 		catch (Exception Exp)
@@ -535,16 +417,7 @@ public class LabStoreBean extends RmiBean
 	
 	private String Sid;
 	private String Func_Corp_Id;
-	private String Func_Type_Id;
 	
-	public String getFunc_Type_Id() {
-		return Func_Type_Id;
-	}
-
-	public void setFunc_Type_Id(String func_Type_Id) {
-		Func_Type_Id = func_Type_Id;
-	}
-
 	public String getLab_Type() {
 		return Lab_Type;
 	}

@@ -1,9 +1,7 @@
 package bean;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintWriter;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -12,14 +10,10 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 
-import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.jspsmart.upload.SmartUpload;
-
-import jxl.Sheet;
 import jxl.Workbook;
 import jxl.format.Alignment;
 import jxl.format.Border;
@@ -44,9 +38,9 @@ public class LabStoreIBean extends RmiBean
 	
 	public LabStoreIBean()
 	{
-		super.className = "LabStoreIBean"; 
+		super.className = "LabStoreIBean";
 	}
-	 
+	
 	public void ExecCmd(HttpServletRequest request, HttpServletResponse response, Rmi pRmi, boolean pFromZone) throws ServletException, IOException
 	{
 		getHtmlData(request);
@@ -76,7 +70,10 @@ public class LabStoreIBean extends RmiBean
 		
 		msgBean = pRmi.RmiExec(currStatus.getCmd(), this, currStatus.getCurrPage());
 		switch(currStatus.getCmd())
-		{						
+		{
+			case 13://一键审核
+			case 12://审核
+			case 11://修改
 			case 10://添加
 				currStatus.setResult(MsgBean.GetResult(msgBean.getStatus()));
 				msgBean = pRmi.RmiExec(0, this, currStatus.getCurrPage());
@@ -91,32 +88,19 @@ public class LabStoreIBean extends RmiBean
 		    	msgBean = pRmi.RmiExec(0, Store, 0);
 				request.getSession().setAttribute("Lab_Store_" + Sid, (Object)msgBean.getMsg());
 		    	break;
-		    								
-			case 2://入库	
-				request.getSession().setAttribute("Lab_Store_IN_" + Sid, ((Object)msgBean.getMsg()));
-				currStatus.setJsp("Lab_Store_IN_Edt.jsp?Sid=" + Sid);				
-				break;		    	
 			case 14://入库操作
 				currStatus.setResult(MsgBean.GetResult(msgBean.getStatus()));
-				msgBean = pRmi.RmiExec(1, this, currStatus.getCurrPage());		
+				msgBean = pRmi.RmiExec(1, this, currStatus.getCurrPage());
 			case 1://入库查询
 				request.getSession().setAttribute("Lab_Store_IN_" + Sid, ((Object)msgBean.getMsg()));
 		    	currStatus.setTotalRecord(msgBean.getCount());
 		    	currStatus.setJsp("Lab_Store_IN.jsp?Sid=" + Sid);
 		    	
-		    	//劳保名称
-		    	msgBean = pRmi.RmiExec(2, this, 0);
-		    	request.getSession().setAttribute("Lab_Store_" + Sid, (Object)msgBean.getMsg());
-				break;
-			case 13: //删除
-				msgBean = pRmi.RmiExec(1, this, 0);
-				request.getSession().setAttribute("Lab_Store_IN_" + Sid, ((Object)msgBean.getMsg()));
-		    	currStatus.setTotalRecord(msgBean.getCount());
-		    	currStatus.setJsp("Lab_Store_IN.jsp?Sid=" + Sid);
-		    	
-		    	//劳保名称
-		    	msgBean = pRmi.RmiExec(2, this, 0);
-		    	request.getSession().setAttribute("Lab_Store_" + Sid, (Object)msgBean.getMsg());
+		    	//库存台账
+		    	LabStoreBean Store2 = new LabStoreBean();
+		    	Store2.setFunc_Corp_Id("");
+		    	msgBean = pRmi.RmiExec(0, Store2, 0);
+				request.getSession().setAttribute("Lab_Store_" + Sid, (Object)msgBean.getMsg());
 				break;
 		}
 		
@@ -634,103 +618,6 @@ public class LabStoreIBean extends RmiBean
 			ex.printStackTrace();
 		}
 	}
-	//入库批量导入
-	
-	public void DaoLabIFile(HttpServletRequest request, HttpServletResponse response, Rmi pRmi, boolean pFromZone, ServletConfig pConfig) 
-	{
-		try
-		{			
-			SmartUpload mySmartUpload = new SmartUpload();
-			mySmartUpload.initialize(pConfig, request, response);
-			mySmartUpload.setAllowedFilesList("xls,xlsx,XLS,XLSX,");
-			mySmartUpload.upload();
-									
-			Sid = mySmartUpload.getRequest().getParameter("Sid");
-			currStatus = (CurrStatus)request.getSession().getAttribute("CurrStatus_" + Sid);						
-			System.out.println("Sid"+Sid+"[]"+"currStatus"+currStatus);
-			if(mySmartUpload.getFiles().getCount() > 0 && mySmartUpload.getFiles().getFile(0).getFilePathName().trim().length() > 0)
-			{
-				if(mySmartUpload.getFiles().getFile(0).getSize()/1024 <= 3072)//最大3M
-				{		
-					String FileSaveRoute = "/www/LNG-LOCAL/LNG-LOCAL-WEB/files/upfiles/";										
-					//上传现有文档			
-					com.jspsmart.upload.File myFile = mySmartUpload.getFiles().getFile(0);		
-					String File_Name = new SimpleDateFormat("yyyyMMdd").format(new Date()) + CommUtil.Randon()+ "." + myFile.getFileExt();			
-					myFile.saveAs(FileSaveRoute + File_Name);						
-					//录入数据库
-					InputStream is = new FileInputStream(FileSaveRoute + File_Name);
-					Workbook rwb = Workbook.getWorkbook(is);					
-					Sheet rs = rwb.getSheet(0);					
-				    int rsRows = rs.getRows();		
-				    int succCnt = 0;	
-				    for(int i=3; i<rsRows; i++)
-				    {
-				    	if(null==rs.getCell(1, i).getContents().trim()||"".equals(rs.getCell(1, i).getContents().trim()))
-				    	{
-				    
-				    		break;//当excel文档第一行为空时，退出循环
-				    		}
-				    	Lab_Type    = rs.getCell(1, i).getContents().trim();	//备件名称				    	
-				    	Lab_Mode    = rs.getCell(2, i).getContents().trim();	//规格型号	    				  
-				    	Unit        = rs.getCell(3, i).getContents().trim();	//单位
-				    	if(null==rs.getCell(4, i).getContents().trim()||"".equals(rs.getCell(4, i).getContents().trim()))				    		
-				    	{IN_Cnt ="0";}else{IN_Cnt   = rs.getCell(4, i).getContents().trim();}   //入库数量	
-				    	if(null==rs.getCell(5, i).getContents().trim()||"".equals(rs.getCell(5, i).getContents().trim()))
-				    	{IN_Oper = "无";}else{IN_Oper  = rs.getCell(5, i).getContents().trim(); }//经办人
-				    	if(null==rs.getCell(6, i).getContents().trim()||"".equals(rs.getCell(6, i).getContents().trim()))
-				    	{IN_Date = "0";}else{IN_Date  = rs.getCell(6, i).getContents().trim(); }//进库时间
-				    	if(null==rs.getCell(7, i).getContents().trim()||"".equals(rs.getCell(7, i).getContents().trim()))
-				    	{Operator = "无";}else{Operator   = rs.getCell(7, i).getContents().trim();}//验收人
-				    	if(null==rs.getCell(8, i).getContents().trim()||"".equals(rs.getCell(8, i).getContents().trim()))
-				    	{IN_Memo = "无备注";}else{IN_Memo   = rs.getCell(8, i).getContents().trim();}//备注信息
-				    	
-				    	msgBean = pRmi.RmiExec(10, this, 0);
-				    	if(msgBean.getStatus() == MsgBean.STA_SUCCESS)
-						{
-				    		succCnt ++;
-						}
-				    }	
-				    currStatus.setResult("成功导入[" + String.valueOf(succCnt) + "/" + String.valueOf(rsRows-3) + "]个");
-				}
-				else
-				{
-					currStatus.setResult("文档上传失败！文档过大，必须小于3M!");
-				}				
-			}
-			
-			Func_Corp_Id = currStatus.getFunc_Corp_Id();
-			if(null == Func_Corp_Id || Func_Corp_Id.equals("9999"))
-			{
-				Func_Corp_Id = "";
-			}						
-			Func_Type_Id = currStatus.getFunc_Type_Id();
-			if(null == Func_Type_Id)
-			{
-				Func_Type_Id = "";
-			}
-			
-			msgBean = pRmi.RmiExec(1, this, 0);
-			request.getSession().setAttribute("Lab_Store_IN_" + Sid, ((Object)msgBean.getMsg()));
-	    	currStatus.setTotalRecord(msgBean.getCount());
-	    	currStatus.setJsp("Lab_Store_IN.jsp?Sid=" + Sid);
-	    	
-	    	//劳保名称
-	    	msgBean = pRmi.RmiExec(2, this, 0);
-	    	request.getSession().setAttribute("Lab_Store_" + Sid, (Object)msgBean.getMsg());
-			request.getSession().setAttribute("CurrStatus_" + Sid, currStatus);
-		   	response.sendRedirect(currStatus.getJsp());
-		}
-		catch(Exception exp)
-		{
-			exp.printStackTrace();
-		}
-	
-	}
-	
-	
-	
-	
-	
 	
 	public String getSql(int pCmd)
 	{
@@ -741,6 +628,7 @@ public class LabStoreIBean extends RmiBean
 				switch(currStatus.getFunc_Sub_Id())
 				{
 					case 0:
+					case 9:
 						Sql = " select t.sn, t.lab_type, t.lab_type_name, t.lab_mode, t.model, t.lab_i_time, t.lab_i_numb, " +
 				  	  	  	  " t.lab_i_cnt, t.lab_i_price, t.lab_i_amt, t.lab_i_memo, t.status, t.status_op, t.status_op_name, t.status_memo, " +
 				  	  	  	  " t.ctime, t.operator, t.operator_name, t.in_status, t.in_numb, t.in_cnt, t.in_date, t.in_oper " +
@@ -765,32 +653,56 @@ public class LabStoreIBean extends RmiBean
 				}
 				break;
 			case 1://入库查询
-				Sql = "select t.sn,t.lab_type,t.lab_mode,t.unit,t.in_cnt,t.in_oper,t.in_date,t.operator,t.in_memo"+
-					  " from lab_store_i t"+
-					  " where t.lab_type like '"+ Func_Corp_Id +"%' " +
-					  " and   t.lab_mode like '"+ Func_Type_Id +"%' " +
-					  " and t.in_date >= date_format('"+currStatus.getVecDate().get(0).toString().substring(0, 10)+"', '%Y-%m-%d')" +
-				  	  " and t.in_date <= date_format('"+currStatus.getVecDate().get(1).toString().substring(0, 10)+"', '%Y-%m-%d')" +
-					  " order by t.in_date DESC";
+				switch(currStatus.getFunc_Sub_Id())
+				{
+					case 0:
+					case 9:
+						Sql = " select t.sn, t.lab_type, t.lab_type_name, t.lab_mode, t.model, t.lab_i_time, t.lab_i_numb, " +
+			  	  	  	  	  " t.lab_i_cnt, t.lab_i_price, t.lab_i_amt, t.lab_i_memo, t.status, t.status_op, t.status_op_name, t.status_memo, " +
+			  	  	  	  	  " t.ctime, t.operator, t.operator_name, t.in_status, t.in_numb, t.in_cnt, t.in_date, t.in_oper " +
+			  	  	  	  	  " from view_lab_store_i t " +
+			  	  	  	  	  " where t.lab_type like '"+ Func_Corp_Id +"%' " +
+			  	  	  	  	  "   and t.status = '1' " +
+			  	  	  	  	  "   and t.in_status like '"+ Func_Sub_Id +"%'" +
+			  	  	  	  	  "   and t.lab_i_numb like '%"+ Func_Type_Id +"%'" +
+			  	  	  	  	  "   order by t.lab_i_time desc ";
+						break;
+					default:
+						Sql = " select t.sn, t.lab_type, t.lab_type_name, t.lab_mode, t.model, t.lab_i_time, t.lab_i_numb, " +
+			  	  	  	  	  " t.lab_i_cnt, t.lab_i_price, t.lab_i_amt, t.lab_i_memo, t.status, t.status_op, t.status_op_name, t.status_memo, " +
+			  	  	  	  	  " t.ctime, t.operator, t.operator_name, t.in_status, t.in_numb, t.in_cnt, t.in_date, t.in_oper " +
+			  	  	  	  	  " from view_lab_store_i t " +
+			  	  	  	  	  " where t.lab_type like '"+ Func_Corp_Id +"%' " +
+			  	  	  	  	  "   and t.status = '1' " +
+			  	  	  	  	  "   and t.in_status like '"+ Func_Sub_Id +"%'" +
+			  	  	  	  	  "   and t.lab_i_numb like '%"+ Func_Type_Id +"%'" +
+			  	  	  	  	  "   and t.lab_i_time >= date_format('"+currStatus.getVecDate().get(0).toString().substring(0, 10)+"', '%Y-%m-%d')" +
+			  	  	  	  	  "   and t.lab_i_time <= date_format('"+currStatus.getVecDate().get(1).toString().substring(0, 10)+"', '%Y-%m-%d')" +
+			  	  	  	  	  "   order by t.lab_i_time desc ";
+						break;
+				}
 				break;
-				
-			case 2://查询劳保名称
-				Sql = "select t.sn,t.lab_type,t.lab_mode,t.unit,t.in_cnt,t.in_oper,t.in_date,t.operator,t.in_memo"+
-					  " from lab_store_i t"+
-					  " group by t.lab_type";						
-				break;
-				
 			case 10://添加
-				Sql = " insert into lab_store_i(lab_type, lab_mode, unit,in_cnt,in_oper,in_date,operator,in_memo)" +
-					  " values('"+ Lab_Type +"', '"+ Lab_Mode +"',  '"+ Unit +"',  '"+ IN_Cnt +"',  '"+ IN_Oper +"' , '"+ IN_Date +"', '"+ Operator +"', '"+ IN_Memo +"')";
+				Sql = " insert into lab_store_i(lab_type, lab_mode, lab_i_time, lab_i_numb, lab_i_cnt, lab_i_price, lab_i_amt, lab_i_memo, ctime, operator)" +
+					  " values('"+ Lab_Type +"', '"+ Lab_Mode +"', '"+ Lab_I_Time +"', '"+ Lab_I_Numb +"', '"+ Lab_I_Cnt +"', '"+ Lab_I_Price +"', '"+ Lab_I_Amt +"', '"+ Lab_I_Memo +"', DATE_FORMAT(now(), '%Y-%m-%d %H:%i:%S'), '"+ Operator +"')";
 				break;
 			case 11://修改
 				Sql = " update lab_store_i t set t.lab_type = '"+ Lab_Type +"', t.lab_mode = '"+ Lab_Mode +"',  t.lab_i_time = '"+ Lab_I_Time +"', t.lab_i_numb = '"+ Lab_I_Numb +"', " +
 					  " t.lab_i_cnt = '"+ Lab_I_Cnt +"', t.lab_i_price = '"+ Lab_I_Price +"', t.lab_i_amt = '"+ Lab_I_Amt +"', t.lab_i_memo = '"+ Lab_I_Memo +"', t.operator = '"+ Operator +"' " +
 					  " where t.sn = '"+ SN +"'";
-				break;		
-			case 13://删除
-				Sql = " delete from lab_store_i where sn = '"+ SN +"' ";				
+				break;
+			case 12://审核
+				Sql = " update lab_store_i t set t.status = '"+ Status +"', t.status_op = '"+ Status_OP +"', t.status_memo = '"+ Status_Memo +"' " +
+					  " where t.sn = '"+ SN +"'";
+				break;
+			case 13://一键审核
+				Sql = " update lab_store_i t set t.status = '"+ Status +"', t.status_op = '"+ Status_OP +"', t.status_memo = '"+ Status_Memo +"' " +
+				      " where t.lab_i_numb = '"+ Lab_I_Numb +"' " +
+				      "   and t.status = '0' ";
+				break;
+			case 14://入库
+				Sql = " update lab_store_i t set t.in_status = '"+ IN_Status +"', t.in_numb = t.in_numb +'"+ IN_Numb +"', t.in_cnt = '"+ IN_Cnt +"', t.in_date = '"+ IN_Date +"', t.in_oper = '"+ IN_Oper +"' " +
+				  	  " where t.sn = '"+ SN +"'";
 				break;
 		}
 		return Sql;
@@ -802,14 +714,28 @@ public class LabStoreIBean extends RmiBean
 		try
 		{
 			setSN(pRs.getString(1));
-			setLab_Type(pRs.getString(2));	
-			setLab_Mode(pRs.getString(3));						
-			setUnit(pRs.getString(4));					
-			setIN_Cnt(pRs.getString(5));
-			setIN_Oper(pRs.getString(6));
-			setIN_Date(pRs.getString(7));
-			setOperator(pRs.getString(8));
-			setIN_Memo(pRs.getString(9));
+			setLab_Type(pRs.getString(2));
+			setLab_Type_Name(pRs.getString(3));
+			setLab_Mode(pRs.getString(4));
+			setModel(pRs.getString(5));
+			setLab_I_Time(pRs.getString(6));
+			setLab_I_Numb(pRs.getString(7));
+			setLab_I_Cnt(pRs.getString(8));
+			setLab_I_Price(pRs.getString(9));
+			setLab_I_Amt(pRs.getString(10));
+			setLab_I_Memo(pRs.getString(11));
+			setStatus(pRs.getString(12));
+			setStatus_OP(pRs.getString(13));
+			setStatus_OP_Name(pRs.getString(14));
+			setStatus_Memo(pRs.getString(15));
+			setCTime(pRs.getString(16));
+			setOperator(pRs.getString(17));
+			setOperator_Name(pRs.getString(18));
+			setIN_Status(pRs.getString(19));
+			setIN_Numb(pRs.getString(20));
+			setIN_Cnt(pRs.getString(21));
+			setIN_Date(pRs.getString(22));
+			setIN_Oper(pRs.getString(23));
 		}
 		catch (SQLException sqlExp)
 		{
@@ -824,15 +750,28 @@ public class LabStoreIBean extends RmiBean
 		try
 		{
 			setSN(CommUtil.StrToGB2312(request.getParameter("SN")));
-			setLab_Type(CommUtil.StrToGB2312(request.getParameter("Lab_Type")));		
-			setLab_Mode(CommUtil.StrToGB2312(request.getParameter("Lab_Mode")));			
+			setLab_Type(CommUtil.StrToGB2312(request.getParameter("Lab_Type")));
+			setLab_Type_Name(CommUtil.StrToGB2312(request.getParameter("Lab_Type_Name")));
+			setLab_Mode(CommUtil.StrToGB2312(request.getParameter("Lab_Mode")));
+			setModel(CommUtil.StrToGB2312(request.getParameter("Model")));
+			setLab_I_Time(CommUtil.StrToGB2312(request.getParameter("Lab_I_Time")));
+			setLab_I_Numb(CommUtil.StrToGB2312(request.getParameter("Lab_I_Numb")));
+			setLab_I_Cnt(CommUtil.StrToGB2312(request.getParameter("Lab_I_Cnt")));
+			setLab_I_Price(CommUtil.StrToGB2312(request.getParameter("Lab_I_Price")));
+			setLab_I_Amt(CommUtil.StrToGB2312(request.getParameter("Lab_I_Amt")));
+			setLab_I_Memo(CommUtil.StrToGB2312(request.getParameter("Lab_I_Memo")));
+			setStatus(CommUtil.StrToGB2312(request.getParameter("Status")));
+			setStatus_OP(CommUtil.StrToGB2312(request.getParameter("Status_OP")));
+			setStatus_OP_Name(CommUtil.StrToGB2312(request.getParameter("Status_OP_Name")));
+			setStatus_Memo(CommUtil.StrToGB2312(request.getParameter("Status_Memo")));
+			setCTime(CommUtil.StrToGB2312(request.getParameter("CTime")));
 			setOperator(CommUtil.StrToGB2312(request.getParameter("Operator")));
-			setUnit(CommUtil.StrToGB2312(request.getParameter("Unit")));			
+			setOperator_Name(CommUtil.StrToGB2312(request.getParameter("Operator_Name")));
+			setIN_Status(CommUtil.StrToGB2312(request.getParameter("IN_Status")));
+			setIN_Numb(CommUtil.StrToGB2312(request.getParameter("IN_Numb")));
 			setIN_Cnt(CommUtil.StrToGB2312(request.getParameter("IN_Cnt")));
-			setIN_Oper(CommUtil.StrToGB2312(request.getParameter("IN_Oper")));
 			setIN_Date(CommUtil.StrToGB2312(request.getParameter("IN_Date")));
-			setOperator(CommUtil.StrToGB2312(request.getParameter("Operator")));
-			setIN_Memo(CommUtil.StrToGB2312(request.getParameter("IN_Memo")));
+			setIN_Oper(CommUtil.StrToGB2312(request.getParameter("IN_Oper")));
 			setSid(CommUtil.StrToGB2312(request.getParameter("Sid")));
 		}
 		catch (Exception Exp)
@@ -865,28 +804,12 @@ public class LabStoreIBean extends RmiBean
 	private String IN_Cnt;
 	private String IN_Date;
 	private String IN_Oper;
-	private String Unit;
+	
 	private String Sid;
 	private String Func_Corp_Id;
 	private String Func_Sub_Id;
 	private String Func_Type_Id;
-	private String IN_Memo;
-	public String getIN_Memo() {
-		return IN_Memo;
-	}
-
-	public void setIN_Memo(String iN_Memo) {
-		IN_Memo = iN_Memo;
-	}
-
-	public String getUnit() {
-		return Unit;
-	}
-
-	public void setUnit(String unit) {
-		Unit = unit;
-	}
-
+	
 	public String getSN() {
 		return SN;
 	}

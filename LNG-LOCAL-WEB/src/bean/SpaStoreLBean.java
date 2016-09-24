@@ -65,39 +65,28 @@ public class SpaStoreLBean extends RmiBean
 		{
 			Func_Sel_Id = "";
 		}
-		Func_Type_Id = currStatus.getFunc_Type_Id();
-		if(null == Func_Type_Id || Func_Type_Id.equals("888") )
-		{
-			Func_Type_Id = "";
-		}		
+		
+		msgBean = pRmi.RmiExec(currStatus.getCmd(), this, 0);
 		switch(currStatus.getCmd())
 		{
-			case 0://查询		    	
+			case 0://查询
+		    	request.getSession().setAttribute("Spa_Store_L_" + Sid, ((Object)msgBean.getMsg()));
 		    	currStatus.setJsp("Spa_Store_L.jsp?Sid=" + Sid);
-		    	
-		    	
-		    	
 		    	
 		    	//库存台账
 		    	SpaStoreBean Store = new SpaStoreBean();
-		    	Store.setFunc_Corp_Id(Func_Corp_Id);
-		    	Store.setFunc_Type_Id(Func_Type_Id);
-		    	msgBean = pRmi.RmiExec(3, Store, 0);
-		    	request.getSession().setAttribute("Spa_Store_Type_" + Sid, ((Object)msgBean.getMsg()));
-		    	msgBean = pRmi.RmiExec(4, Store, 0);
-		    	request.getSession().setAttribute("Spa_Store_Mode_" + Sid, ((Object)msgBean.getMsg()));
-		    	Store.currStatus = currStatus;
-		    	msgBean = pRmi.RmiExec(5, Store, 0);
+		    	Store.setFunc_Corp_Id("");
+		    	Store.setFunc_Sub_Id("");
+		    	msgBean = pRmi.RmiExec(0, Store, 0);
 				request.getSession().setAttribute("Spa_Store_" + Sid, (Object)msgBean.getMsg());
 		    	
-		    	//各站备品量
-		    	SpaStoreOBean oBean = new SpaStoreOBean();
-		    	oBean.setFunc_Corp_Id(Func_Corp_Id);
-		    	oBean.setFunc_Type_Id(Func_Type_Id);
-		    	oBean.currStatus = currStatus;
-		    	msgBean = pRmi.RmiExec(1, oBean, 0);
-		    	request.getSession().setAttribute("Spa_Store_Cpm_" + Sid, (Object)msgBean.getMsg());
-		    	msgBean = pRmi.RmiExec(5, oBean, 0);
+		    	//站点库存
+		    	SpaStationLBean StationL = new SpaStationLBean();
+		    	StationL.setFunc_Corp_Id(Func_Corp_Id);
+		    	StationL.setFunc_Sub_Id(Func_Sub_Id);
+		    	StationL.setFunc_Sel_Id(Func_Sel_Id);
+		    	StationL.currStatus = currStatus;
+		    	msgBean = pRmi.RmiExec(0, StationL, 0);
 		    	request.getSession().setAttribute("Spa_Station_L_" + Sid, ((Object)msgBean.getMsg()));
 		    	
 		    	switch(currStatus.getFunc_Sel_Id())
@@ -1131,15 +1120,6 @@ public class SpaStoreLBean extends RmiBean
 	private String Func_Corp_Id;
 	private String Func_Sub_Id;
 	private String Func_Sel_Id;
-	private String Func_Type_Id;
-	public String getFunc_Type_Id() {
-		return Func_Type_Id;
-	}
-
-	public void setFunc_Type_Id(String func_Type_Id) {
-		Func_Type_Id = func_Type_Id;
-	}
-
 	private String Year;
 	private String Month;
 	private String Quarter;

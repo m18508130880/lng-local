@@ -16,14 +16,21 @@ public class CurrStatus implements Serializable
 	private int Func_Id;
 	private int Func_Sub_Id;
 	private int Func_Sel_Id;
+	private String Func_Cpm_Id;
 	private String Func_Corp_Id;
 	private String Func_Type_Id;
+	private String Func_Name_Id;
 	private Vector<Object> VecDate;
 	private String Result = null;
 	private int Curr_Status;
 	private String Jsp;
-	
-	
+
+	public String getFunc_Name_Id() {
+		return Func_Name_Id;
+	}
+	public void setFunc_Name_Id(String func_Name_Id) {
+		Func_Name_Id = func_Name_Id;
+	}
 	public String getCheckCode() {
 		return CheckCode;
 	}
@@ -122,13 +129,18 @@ public class CurrStatus implements Serializable
 			{
 				Cmd = CommUtil.StrToInt(request.getParameter("Cmd"));
 				CurrPage = CommUtil.StrToInt(request.getParameter("CurrPage"));
-				CurrPage = CurrPage==0?1:CurrPage;		
+				CurrPage = CurrPage==0?1:CurrPage;			
+				VecDate = CommUtil.getDate(request.getParameter("BTime"),request.getParameter("ETime"));
+				//INT
 				Func_Id = CommUtil.StrToInt(request.getParameter("Func_Id"));
 				Func_Sub_Id = CommUtil.StrToInt(request.getParameter("Func_Sub_Id"));
-				Func_Sel_Id = CommUtil.StrToInt(request.getParameter("Func_Sel_Id"));		
-				VecDate = CommUtil.getDate(request.getParameter("BTime"),request.getParameter("ETime"));			
+				Func_Sel_Id = CommUtil.StrToInt(request.getParameter("Func_Sel_Id"));	
+				//String
 				Func_Corp_Id = CommUtil.StrToGB2312(request.getParameter("Func_Corp_Id"));
 				Func_Type_Id = CommUtil.StrToGB2312(request.getParameter("Func_Type_Id"));
+				Func_Cpm_Id = CommUtil.StrToGB2312(request.getParameter("Func_Cpm_Id"));
+				Func_Name_Id = CommUtil.StrToGB2312(request.getParameter("Func_Name_Id"));				
+				
 			}
 		}catch(Exception Ex)
 		{
@@ -139,7 +151,8 @@ public class CurrStatus implements Serializable
 	public String GetPageHtml(String pForm) 
 	{
 		String s = "";
-		int TotalPages = (TotalRecord + MsgBean.CONST_PAGE_SIZE -1)/MsgBean.CONST_PAGE_SIZE;
+		int TotalPages;		
+		 TotalPages = (TotalRecord + MsgBean.CONST_PAGE_SIZE -1)/MsgBean.CONST_PAGE_SIZE;
 		if(0 == TotalRecord)
 		{
 			CurrPage = 0;
@@ -173,5 +186,11 @@ public class CurrStatus implements Serializable
 		s+="到第<input name='ToPage' type='text' size='2'>页";
 		s+="<input type='button' style='width:40px;height:20px' onClick='GoPage(" + pForm + ".ToPage.value)' value='确定'/>";
 		return s; 
+	}
+	public String getFunc_Cpm_Id() {
+		return Func_Cpm_Id;
+	}
+	public void setFunc_Cpm_Id(String func_Cpm_Id) {
+		Func_Cpm_Id = func_Cpm_Id;
 	}
 }

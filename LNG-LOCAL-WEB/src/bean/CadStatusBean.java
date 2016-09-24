@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 import javax.servlet.ServletContext;
@@ -42,7 +44,6 @@ public class CadStatusBean extends RmiBean
 		switch(currStatus.getCmd())
 		{
 			case 12://删除			
-				
 			case 11://修改
 			case 10://添加
 				currStatus.setResult(MsgBean.GetResult(msgBean.getStatus()));
@@ -67,12 +68,11 @@ public class CadStatusBean extends RmiBean
 		    	System.out.println(Func_Type_Id);
 		    	if( Func_Type_Id.equals("999"))
 		    	{
-		    		Func_Type_Id = "";
-		    		uBean.setFunc_Type_Id(Func_Type_Id);
+		    		uBean.setFunc_Type_Id("");
 		    		msgBean = pRmi.RmiExec(6, uBean, 0);
 		    	}else
 		    	{
-		    		msgBean = pRmi.RmiExec(5, uBean, 0);
+		    		msgBean = pRmi.RmiExec(5, uBean, 0);  
 		    	}		    	
 		    	request.getSession().setAttribute("Cad_Status_UserInfo_" + Sid, ((Object)msgBean.getMsg()));
 		    	break;
@@ -83,55 +83,71 @@ public class CadStatusBean extends RmiBean
 		
 	//证件图片上传
 	public void DaoFile(HttpServletRequest request, HttpServletResponse response, Rmi pRmi, boolean pFromZone) throws ServletException, IOException
-	{						
+	{		
 		DiskFileItemFactory factory = new DiskFileItemFactory();    	
 		ServletFileUpload sfu = new ServletFileUpload(factory); 	
-		System.out.println(Sid);
 		String Func_Cpm_Id = "";
+		SimpleDateFormat df = new SimpleDateFormat("mmss"); //设置日期格式
+		String CurrTime = df.format(new Date()).toString();
 		try {				
 				List<FileItem> items = sfu.parseRequest(request);
 				for(int i=0;i<items.size();i++)
 				{
 					FileItem item = items.get(i);
-					if(item.isFormField()){						
+					if(item.isFormField())
+					{	
 						String fieldName = item.getFieldName();
-						System.out.println("["+fieldName+"]");
-						Func_Cpm_Id = item.getString();
-						System.out.println("["+Func_Cpm_Id+"]");
-					}else
+						if(fieldName.equals("Func_Cpm_Id"))
+						{
+							Func_Cpm_Id = item.getString(); 
+						}
+						if(fieldName.equals("Sid"))
+						{
+							Sid = item.getString();
+							System.out.println("Sid["+Sid+"]");  
+						}
+						if(fieldName.equals("UId"))
+						{
+							UId = item.getString();
+							System.out.println("Uid["+UId+"]");  
+						}
+					}
+					else 
 					{
 						ServletContext sctx = request.getSession().getServletContext();
-						String path = sctx.getRealPath("/skin/images/zhengjian/");
-						System.out.println("["+path+"]");
-						String fileName = item.getName();	
-						String[] str = fileName.split("\\.");	
-						System.out.println(str[1]);
-						String newName = Func_Cpm_Id+"."+str[1];
-						System.out.println("newName["+newName+"]");
-						File file = new File(path + File.separator + newName);
+						String   path       = sctx.getRealPath("/skin/images/zhengjian/");					
+						String   fileType   = item.getName().split("\\.")[1];	
+						String   newName    = Func_Cpm_Id + "_" + CurrTime +"." + fileType;	
+						File     file       = new File(path + File.separator + newName);
 						item.write(file);				
 						
 						if(Func_Cpm_Id.length()>0)
 						{
-							Card_Images   = Func_Cpm_Id;
+							Card_Images     = Func_Cpm_Id + "_" + CurrTime; //存入数据库的字符
 							String[] images = Func_Cpm_Id.split("\\_");
-							Sys_Id    = images[0];
-							Card_Type = images[1];
+							Sys_Id          = images[0];
+							Card_Type       = images[1];
 							
 							msgBean = pRmi.RmiExec(13, this, 0);
 						}
 					}  
-				}	
+				}
 				
-			} catch (Exception e) 
+				msgBean = pRmi.RmiExec(0, this, 0);
+		    	request.getSession().setAttribute("Cad_Status_" + Sid, ((Object)msgBean.getMsg()));
+		    	
+				currStatus = (CurrStatus)request.getSession().getAttribute("CurrStatus_" + Sid);
+				currStatus.setJsp("Cad_Status.jsp?Sid=" + Sid + "&UId=" + UId);
+				
+				request.getSession().setAttribute("CurrStatus_" + Sid, currStatus);	
+			   	response.sendRedirect(currStatus.getJsp());
+			} 
+			catch (Exception e) 
 			{
 				e.printStackTrace();
 			}		
-		
-		
 	}
 		
-	
 	public String getSql(int pCmd)
 	{
 		String Sql = "";

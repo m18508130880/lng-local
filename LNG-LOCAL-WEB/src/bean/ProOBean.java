@@ -213,7 +213,7 @@ public class ProOBean extends RmiBean {
 				wf.setColour(Colour.BLACK);// 字体颜色
 				wff.setAlignment(Alignment.CENTRE);// 设置居中
 				wff.setBorder(Border.ALL, BorderLineStyle.THIN);// 设置边框线
-				wff.setBackground(jxl.format.Colour.TURQUOISE);// 设置单元格的背景颜色
+				wff.setBackground(jxl.format.Colour.TURQUOISE); // 设置单元格的背景颜色
 
 				// 字体格式2
 				WritableFont wf2 = new WritableFont(
